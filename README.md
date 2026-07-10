@@ -144,6 +144,14 @@ Production API base:
 https://dental-crm-neg8.onrender.com/api
 ```
 
+CRM login URLs:
+
+```text
+https://dental-crm-lovat.vercel.app/stafflogin
+https://dental-crm-lovat.vercel.app/crm/login
+https://dental-crm-lovat.vercel.app/crm
+```
+
 Vercel production builds read `frontend/.env.production`, which points the frontend to the live Render API.
 
 ## API Endpoints

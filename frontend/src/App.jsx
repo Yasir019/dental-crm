@@ -15,6 +15,7 @@ import { leadsService } from "./services/leadsService";
 
 const crmPathToPage = {
   "/crm": "dashboard",
+  "/crm/login": "login",
   "/crm/leads": "leads",
   "/crm/followup": "followup",
   "/crm/archive": "archive",
@@ -121,7 +122,7 @@ export default function App() {
     <>
       {route === "/" ? (
         <PublicLeadFormPage showToast={showToast} />
-      ) : route === "/stafflogin" ? (
+      ) : route === "/stafflogin" || route === "/login" || route === "/crm/login" ? (
         <LoginPage onLogin={handleLogin} onBack={() => navigate("/")} showToast={showToast} />
       ) : route.startsWith("/crm") ? (
         authChecking ? (
