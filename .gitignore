@@ -5,5 +5,14 @@ dist/
 backend/.env
 frontend/.env
 backend/data/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.db
+*.sqlite
+*.sqlite3
+supabase/.temp/
 npm-debug.log*
 .DS_Store
