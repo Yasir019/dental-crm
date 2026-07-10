@@ -7,6 +7,7 @@ load_dotenv()
 class Settings:
     port: int = int(os.getenv("PORT", "5000"))
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    cors_origin_regex: str | None = os.getenv("CORS_ORIGIN_REGEX")
     supabase_url: str | None = os.getenv("SUPABASE_URL")
     supabase_service_role_key: str | None = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     auth_secret: str = os.getenv("AUTH_SECRET", "change-this-auth-secret")

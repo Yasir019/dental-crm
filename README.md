@@ -37,10 +37,9 @@ dental-lead-crm/
 
 ## Supabase Setup
 
-Create a Supabase project and run the `leads` table SQL in the Supabase SQL editor before starting the backend.
-Also run `supabase-crm-users.sql` to create the CRM login table and default user.
-The current chatbot uses static website context in the n8n AI Agent prompt. Run `supabase-lead-chat-messages.sql` if you want each captured AI chatbot lead to store its chat transcript in a separate `lead_chat_messages` table.
-If Supabase rejects chatbot leads with `leads_source_check`, run `supabase-fix-leads-source-check.sql` to allow the `AI Chatbot` source.
+Create a Supabase project before starting the backend.
+For a fresh project, run `supabase/full-schema.sql`.
+For an existing database, use the migration files in the `supabase/` folder.
 
 ## Environment Variables
 
@@ -56,6 +55,7 @@ EMAIL_API_KEY=
 EMAIL_FROM=
 PORT=5000
 FRONTEND_URL=http://localhost:5173
+CORS_ORIGIN_REGEX=https://.*\.vercel\.app
 ```
 
 Keep `SUPABASE_SERVICE_ROLE_KEY` only in `backend/.env`. Never expose it in frontend code.
@@ -72,7 +72,7 @@ EMAIL_FROM=Your Clinic <verified@yourdomain.com>
 Optional frontend override:
 
 ```bash
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=https://dental-crm-neg8.onrender.com/api
 ```
 
 For the n8n AI chatbot source:
@@ -123,6 +123,22 @@ http://localhost:5173
 ```
 
 The public lead form is the first screen. Use the floating `Open CRM` button to access the dashboard, leads, and follow-up pages.
+
+## Live Deployment URLs
+
+Production backend:
+
+```text
+https://dental-crm-neg8.onrender.com
+```
+
+Production API base:
+
+```text
+https://dental-crm-neg8.onrender.com/api
+```
+
+Vercel production builds read `frontend/.env.production`, which points the frontend to the live Render API.
 
 ## API Endpoints
 

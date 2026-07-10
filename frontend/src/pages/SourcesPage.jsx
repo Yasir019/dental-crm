@@ -36,7 +36,7 @@ export default function SourcesPage() {
   const [googleModalOpen, setGoogleModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [googleConfig, setGoogleConfig] = useState({
-    crmApiUrl: "https://headlamp-unneeded-swore.ngrok-free.dev/api/integrations/google-form",
+    crmApiUrl: "https://dental-crm-neg8.onrender.com/api/integrations/google-form",
     integrationKey: "dental_google_form_2026_secret_98765",
     nameField: "Name",
     phoneField: "Phone",
@@ -78,8 +78,7 @@ function onFormSubmit(e) {
     method: "post",
     contentType: "application/json",
     headers: {
-      "x-integration-key": INTEGRATION_KEY,
-      "ngrok-skip-browser-warning": "true"
+      "x-integration-key": INTEGRATION_KEY
     },
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
