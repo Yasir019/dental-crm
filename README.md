@@ -54,7 +54,7 @@ AI_API_KEY=
 EMAIL_API_KEY=
 EMAIL_FROM=
 PORT=5000
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=https://dental-crm-lovat.vercel.app
 CORS_ORIGIN_REGEX=https://.*\.vercel\.app
 ```
 
@@ -130,6 +130,12 @@ Production backend:
 
 ```text
 https://dental-crm-neg8.onrender.com
+```
+
+Production frontend:
+
+```text
+https://dental-crm-lovat.vercel.app
 ```
 
 Production API base:
