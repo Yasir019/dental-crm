@@ -1,0 +1,25 @@
+# Project-specific Codex MCP config template.
+# Copy this file to .codex/config.toml and fill secrets locally.
+# Do not commit .codex/config.toml.
+
+[mcp_servers.n8n]
+url = "https://your-n8n-domain/mcp-server/http"
+
+[mcp_servers.n8n.http_headers]
+Authorization = "Bearer YOUR_N8N_MCP_TOKEN"
+
+[mcp_servers.render-mcp]
+url = "https://mcp.render.com/mcp"
+
+[mcp_servers.render-mcp.http_headers]
+Authorization = "Bearer YOUR_RENDER_MCP_TOKEN"
+
+[mcp_servers.vercel]
+url = "https://mcp.vercel.com"
+
+[mcp_servers.retell-mcp-server]
+enabled = true
+url = "https://retell.stlmcp.com"
+
+[mcp_servers.retell-mcp-server.http_headers]
+Authorization = "Bearer YOUR_RETELL_API_KEY"

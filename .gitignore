@@ -14,5 +14,6 @@ venv/
 *.sqlite
 *.sqlite3
 supabase/.temp/
+.codex/config.toml
 npm-debug.log*
 .DS_Store
