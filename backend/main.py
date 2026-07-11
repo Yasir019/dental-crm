@@ -5,14 +5,21 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
-from app.api.routes import ai, auth, chatbot, email, integrations, leads
+from app.api.routes import ai, auth, chatbot, email, integrations, leads, voice
 
 app = FastAPI(title="DentalLead CRM API")
 
+allowed_origins = [origin.strip() for origin in settings.frontend_url.split(",") if origin.strip()]
+for local_origin in ["http://localhost:5173", "http://127.0.0.1:5173"]:
+    if local_origin not in allowed_origins:
+        allowed_origins.append(local_origin)
+
+cors_origin_regex = settings.cors_origin_regex or r"^https://.*\.vercel\.app$|^http://(localhost|127\.0\.0\.1):[0-9]+$"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in settings.frontend_url.split(",") if origin.strip()],
-    allow_origin_regex=settings.cors_origin_regex,
+    allow_origins=allowed_origins,
+    allow_origin_regex=cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,6 +49,7 @@ app.include_router(chatbot.router)
 app.include_router(auth.router)
 app.include_router(ai.router)
 app.include_router(email.router)
+app.include_router(voice.router)
 
 
 if __name__ == "__main__":

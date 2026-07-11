@@ -25,11 +25,20 @@ The system should support these lead capture sources:
 1. Website Form
 2. Google Form
 3. AI Voice Agent
+4. AI Chatbot
 
-All sources should create leads through the same backend endpoint:
+Website and manual leads use the normal lead endpoint:
 
 ```text
 POST /api/leads/create
+```
+
+External sources use protected integration endpoints:
+
+```text
+POST /api/integrations/google-form
+POST /api/integrations/chatbot/lead
+POST /api/integrations/voice-agent/lead
 ```
 
 Example payload:
@@ -107,7 +116,9 @@ Patient calls dental clinic Twilio number
 -> Retell AI agent answers
 -> Agent captures name, phone, email, service
 -> Agent creates call summary
--> Retell webhook sends lead to CRM
+-> Retell webhook sends call analysis to existing n8n workflow voice branch
+-> n8n AI Agent extracts structured lead with Groq openai/gpt-oss-120b
+-> n8n posts completed lead to CRM voice integration endpoint
 -> CRM stores lead with source AI Voice Agent
 ```
 
@@ -118,15 +129,21 @@ AI Voice Agent should capture:
 - Email
 - Interested service
 - Call summary / notes
+- Recording URL
+- Transcript
+
+Voice leads must not be saved if the caller does not provide an email address.
 
 Default source values:
 
 ```json
 {
   "source": "AI Voice Agent",
-  "sourceDetail": "Retell inbound call via Twilio"
+  "sourceDetail": "Retell AI voice agent via n8n"
 }
 ```
+
+Voice call metadata is stored in `lead_voice_calls`, linked to the created lead.
 
 ## Future AI Voice Agent Settings Page
 
@@ -171,6 +188,19 @@ Current lead fields:
 - Source
 - Source detail
 - Notes
+
+Voice lead detail fields:
+
+- Retell call ID
+- Recording URL
+- Transcript
+- Call summary
+- Call status
+- Caller/from number
+- Clinic/to number
+- Duration
+- Sentiment
+- Raw webhook payload
 
 ## AI Chatbot Source Requirements
 
@@ -225,6 +255,15 @@ Current pages:
 - Followup
 - Sources
 - Settings
+
+Leads navigation should expose source-specific pages under Leads:
+
+- Website Form
+- Google Form
+- AI Chatbot
+- AI Voice
+
+Because lead sources are separate pages, remove the source dropdown from the Leads filters. AI Voice leads need recording and transcript/detail buttons.
 
 Future pages:
 
@@ -366,5 +405,5 @@ Recommended feature order:
 - Retell and Twilio setup mostly happens in their dashboards.
 - CRM should expose a webhook/API endpoint for Retell to create leads.
 - Failed automatic email should never block lead creation.
-- Leads from all sources should appear in the same Leads page and Dashboard.
-- Source filters are required for operational clarity.
+- Leads from all sources should appear in Dashboard.
+- Lead source pages should separate Website Form, Google Form, AI Chatbot, and AI Voice leads.

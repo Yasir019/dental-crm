@@ -5,6 +5,7 @@ from app.db.supabase import supabase_request
 
 
 LEAD_SELECT = "id,created_at,name,phone,email,service,followup,status,source,source_detail,notes,is_archived,archived_at"
+VOICE_CALL_SELECT = "id,lead_id,retell_call_id,phone_number,from_number,to_number,call_status,call_summary,transcript,recording_url,user_sentiment,call_successful,custom_analysis_data,raw_payload,started_at,ended_at,duration_seconds,created_at"
 
 
 def normalize_lead(row: dict):
@@ -22,6 +23,32 @@ def normalize_lead(row: dict):
         "notes": row.get("notes") or "",
         "isArchived": bool(row.get("is_archived")),
         "archivedAt": row.get("archived_at"),
+    }
+
+
+def normalize_voice_call(row: dict | None):
+    if not row:
+        return None
+
+    return {
+        "id": row["id"],
+        "leadId": row.get("lead_id"),
+        "retellCallId": row.get("retell_call_id"),
+        "phoneNumber": row.get("phone_number") or "",
+        "fromNumber": row.get("from_number") or "",
+        "toNumber": row.get("to_number") or "",
+        "callStatus": row.get("call_status") or "",
+        "callSummary": row.get("call_summary") or "",
+        "transcript": row.get("transcript") or "",
+        "recordingUrl": row.get("recording_url") or "",
+        "userSentiment": row.get("user_sentiment") or "",
+        "callSuccessful": row.get("call_successful"),
+        "customAnalysisData": row.get("custom_analysis_data") or {},
+        "rawPayload": row.get("raw_payload") or {},
+        "startedAt": row.get("started_at"),
+        "endedAt": row.get("ended_at"),
+        "durationSeconds": row.get("duration_seconds"),
+        "createdAt": row.get("created_at"),
     }
 
 
@@ -72,6 +99,34 @@ async def create_lead_chat_messages(lead_id: str, messages: list[dict], session_
     return await supabase_request("POST", "/lead_chat_messages", json=rows)
 
 
+async def create_lead_voice_call(lead_id: str, data: dict):
+    payload = {
+        "lead_id": lead_id,
+        "retell_call_id": data.get("callId") or None,
+        "phone_number": data.get("phone") or "",
+        "from_number": data.get("fromNumber") or "",
+        "to_number": data.get("toNumber") or "",
+        "call_status": data.get("callStatus") or "",
+        "call_summary": data.get("callSummary") or "",
+        "transcript": data.get("transcript") or "",
+        "recording_url": data.get("recordingUrl") or "",
+        "user_sentiment": data.get("userSentiment") or "",
+        "call_successful": data.get("callSuccessful"),
+        "custom_analysis_data": data.get("customAnalysisData") or {},
+        "raw_payload": data.get("rawPayload") or {},
+        "started_at": data.get("startedAt") or None,
+        "ended_at": data.get("endedAt") or None,
+        "duration_seconds": data.get("durationSeconds"),
+    }
+    rows = await supabase_request(
+        "POST",
+        "/lead_voice_calls",
+        params={"select": VOICE_CALL_SELECT},
+        json=payload,
+    )
+    return normalize_voice_call(pick_first(rows, "Voice call could not be saved."))
+
+
 async def get_lead_chat_messages(lead_id: str):
     rows = await supabase_request(
         "GET",
@@ -83,6 +138,20 @@ async def get_lead_chat_messages(lead_id: str):
         },
     )
     return rows or []
+
+
+async def get_lead_voice_call(lead_id: str):
+    rows = await supabase_request(
+        "GET",
+        "/lead_voice_calls",
+        params={
+            "select": VOICE_CALL_SELECT,
+            "lead_id": f"eq.{lead_id}",
+            "order": "created_at.desc",
+            "limit": "1",
+        },
+    )
+    return normalize_voice_call(pick_first(rows, "Voice call details not found."))
 
 
 async def get_leads():

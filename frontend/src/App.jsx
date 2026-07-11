@@ -17,6 +17,10 @@ const crmPathToPage = {
   "/crm": "dashboard",
   "/crm/login": "login",
   "/crm/leads": "leads",
+  "/crm/leads/website-form": "leads-website-form",
+  "/crm/leads/google-form": "leads-google-form",
+  "/crm/leads/ai-chatbot": "leads-ai-chatbot",
+  "/crm/leads/ai-voice": "leads-ai-voice",
   "/crm/followup": "followup",
   "/crm/archive": "archive",
   "/crm/sources": "sources",
@@ -26,6 +30,10 @@ const crmPathToPage = {
 const pageToCrmPath = {
   dashboard: "/crm",
   leads: "/crm/leads",
+  "leads-website-form": "/crm/leads/website-form",
+  "leads-google-form": "/crm/leads/google-form",
+  "leads-ai-chatbot": "/crm/leads/ai-chatbot",
+  "leads-ai-voice": "/crm/leads/ai-voice",
   followup: "/crm/followup",
   archive: "/crm/archive",
   sources: "/crm/sources",
@@ -137,6 +145,10 @@ export default function App() {
               <>
                 {page === "dashboard" && <DashboardPage leads={leads} />}
                 {page === "leads" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} />}
+                {page === "leads-website-form" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} sourceFilter="Website Form" />}
+                {page === "leads-google-form" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} sourceFilter="Google Form" />}
+                {page === "leads-ai-chatbot" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} sourceFilter="AI Chatbot" />}
+                {page === "leads-ai-voice" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} sourceFilter="AI Voice Agent" />}
                 {page === "followup" && <FollowupPage leads={leads} setLeads={setLeads} showToast={showToast} />}
                 {page === "archive" && <ArchivePage showToast={showToast} />}
                 {page === "sources" && <SourcesPage />}

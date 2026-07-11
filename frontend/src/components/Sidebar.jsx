@@ -1,8 +1,19 @@
-import { Archive, ClipboardList, GitBranch, LayoutDashboard, LogOut, Menu, PhoneCall, Settings, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Archive, Bot, ChevronLeft, ChevronRight, ClipboardList, FileText, GitBranch, Globe2, LayoutDashboard, LogOut, Menu, Mic, PhoneCall, Settings, X } from "lucide-react";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "leads", label: "Leads", icon: ClipboardList },
+  {
+    id: "leads",
+    label: "Leads",
+    icon: ClipboardList,
+    children: [
+      { id: "leads-website-form", label: "Website Form", icon: Globe2 },
+      { id: "leads-google-form", label: "Google Form", icon: FileText },
+      { id: "leads-ai-chatbot", label: "AI Chatbot", icon: Bot },
+      { id: "leads-ai-voice", label: "AI Voice", icon: Mic }
+    ]
+  },
   { id: "followup", label: "Followup", icon: PhoneCall },
   { id: "archive", label: "Archive", icon: Archive },
   { id: "sources", label: "Sources", icon: GitBranch },
@@ -10,6 +21,20 @@ const navItems = [
 ];
 
 export default function Sidebar({ currentPage, onNavigate, collapsed, setCollapsed, mobileOpen, setMobileOpen, onLogout }) {
+  const [openMenus, setOpenMenus] = useState(() => ({
+    leads: currentPage === "leads" || currentPage.startsWith("leads-")
+  }));
+
+  useEffect(() => {
+    if (currentPage === "leads" || currentPage.startsWith("leads-")) {
+      setOpenMenus((current) => ({ ...current, leads: true }));
+    }
+  }, [currentPage]);
+
+  function toggleMenu(id) {
+    setOpenMenus((current) => ({ ...current, [id]: !current[id] }));
+  }
+
   const sidebarContent = (
     <aside
       className={`flex h-full flex-col bg-gradient-to-b from-emerald-700 to-emerald-500 text-white shadow-soft transition-all duration-300 ${
@@ -36,21 +61,63 @@ export default function Sidebar({ currentPage, onNavigate, collapsed, setCollaps
       <nav className="mt-4 space-y-2 px-3">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = currentPage === item.id;
+          const active = currentPage === item.id || (item.id === "leads" && currentPage.startsWith("leads-"));
+          const open = Boolean(openMenus[item.id]);
           return (
-            <button
-              key={item.id}
-              className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
-                active ? "bg-white text-emerald-700 shadow" : "text-emerald-50 hover:bg-white/15"
-              }`}
-              onClick={() => {
-                onNavigate(item.id);
-                setMobileOpen(false);
-              }}
-            >
-              <Icon size={21} />
-              {!collapsed && <span>{item.label}</span>}
-            </button>
+            <div key={item.id}>
+              <div
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
+                  active ? "bg-white text-emerald-700 shadow" : "text-emerald-50 hover:bg-white/15"
+                }`}
+              >
+                <button
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  onClick={() => {
+                    onNavigate(item.id);
+                    if (item.children) setOpenMenus((current) => ({ ...current, [item.id]: true }));
+                    setMobileOpen(false);
+                  }}
+                >
+                  <Icon size={21} />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </button>
+                {!collapsed && item.children && (
+                  <button
+                    className={`rounded-md p-1 transition ${active ? "hover:bg-emerald-50" : "hover:bg-white/15"}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleMenu(item.id);
+                    }}
+                    aria-label={open ? `Close ${item.label} menu` : `Open ${item.label} menu`}
+                  >
+                    {open ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                  </button>
+                )}
+              </div>
+              {!collapsed && item.children && open && (
+                <div className="mt-2 space-y-1 border-l border-white/25 pl-5">
+                  {item.children.map((child) => {
+                    const ChildIcon = child.icon;
+                    const childActive = currentPage === child.id;
+                    return (
+                      <button
+                        key={child.id}
+                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${
+                          childActive ? "bg-white/95 text-emerald-700" : "text-emerald-50 hover:bg-white/15"
+                        }`}
+                        onClick={() => {
+                          onNavigate(child.id);
+                          setMobileOpen(false);
+                        }}
+                      >
+                        <ChildIcon size={16} />
+                        <span>{child.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>

@@ -14,3 +14,4 @@ Suggested order:
 2. `fix-leads-source-check.sql`
 3. `lead-chat-messages.sql`
 4. `lead-archive.sql`
+5. `lead-voice-calls.sql`

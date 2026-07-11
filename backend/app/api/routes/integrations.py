@@ -2,7 +2,8 @@ from fastapi import APIRouter, Header, HTTPException
 from app.core.config import settings
 from app.schemas.chatbot import ChatbotLeadCreate
 from app.schemas.leads import LeadCreate
-from app.services.leads_service import create_lead, create_lead_chat_messages
+from app.schemas.voice import VoiceLeadCreate
+from app.services.leads_service import create_lead, create_lead_chat_messages, create_lead_voice_call
 from app.utils.validation import validate_lead
 
 router = APIRouter(prefix="/api/integrations", tags=["integrations"])
@@ -56,3 +57,28 @@ async def chatbot_lead_handler(payload: ChatbotLeadCreate, x_integration_key: st
         payload.sessionId,
     )
     return {"message": "AI chatbot lead created successfully.", "lead": lead, "chatMessages": chat_messages}
+
+
+@router.post("/voice-agent/lead", status_code=201)
+async def voice_agent_lead_handler(payload: VoiceLeadCreate, x_integration_key: str | None = Header(default=None)):
+    require_integration_key(x_integration_key)
+
+    notes_parts = [payload.notes or ""]
+    if payload.callSummary:
+        notes_parts.append(f"Call summary:\n{payload.callSummary}")
+    if payload.transcript:
+        notes_parts.append(f"Voice transcript:\n{payload.transcript}")
+
+    data = {
+        "name": payload.name,
+        "phone": payload.phone,
+        "email": payload.email,
+        "service": payload.service,
+        "source": "AI Voice Agent",
+        "sourceDetail": "Retell AI voice agent via n8n",
+        "notes": "\n\n".join([part for part in notes_parts if part]).strip(),
+    }
+    validate_lead(data)
+    lead = await create_lead(data)
+    voice_call = await create_lead_voice_call(lead["id"], payload.model_dump())
+    return {"message": "AI voice lead created successfully.", "lead": lead, "voiceCall": voice_call}

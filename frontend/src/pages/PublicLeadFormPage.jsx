@@ -14,10 +14,12 @@ import {
   Star,
   X
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { RetellWebClient } from "retell-client-js-sdk";
 import LeadForm from "../components/LeadForm";
 import { chatbotService } from "../services/chatbotService";
 import { leadsService } from "../services/leadsService";
+import { voiceService } from "../services/voiceService";
 
 const serviceCards = [
   {
@@ -82,16 +84,120 @@ function createChatSessionId() {
 }
 
 export default function PublicLeadFormPage({ showToast }) {
+  const retellClientRef = useRef(null);
+  const callActiveRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceConnecting, setVoiceConnecting] = useState(false);
+  const [voiceCallActive, setVoiceCallActive] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState("Ready to start a secure voice call with our AI assistant.");
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const [voiceError, setVoiceError] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [chatSessionId] = useState(createChatSessionId);
   const [chatMessages, setChatMessages] = useState(initialChatMessages);
   const [chatInput, setChatInput] = useState("");
   const [chatLeadCaptured, setChatLeadCaptured] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (callActiveRef.current && retellClientRef.current) {
+        retellClientRef.current.stopCall();
+      }
+    };
+  }, []);
+
+  function getRetellClient() {
+    if (retellClientRef.current) return retellClientRef.current;
+
+    const client = new RetellWebClient();
+
+    client.on("call_started", () => {
+      callActiveRef.current = true;
+      setVoiceConnecting(false);
+      setVoiceCallActive(true);
+      setVoiceStatus("Call connected. You can speak with the dental AI assistant now.");
+      setVoiceError("");
+    });
+
+    client.on("call_ended", () => {
+      callActiveRef.current = false;
+      setVoiceConnecting(false);
+      setVoiceCallActive(false);
+      setVoiceStatus("Call ended. If you shared your email, the clinic team will follow up soon.");
+    });
+
+    client.on("agent_start_talking", () => {
+      setVoiceStatus("AI assistant is speaking...");
+    });
+
+    client.on("agent_stop_talking", () => {
+      setVoiceStatus("Listening. You can reply now.");
+    });
+
+    client.on("update", (update) => {
+      if (update?.transcript) {
+        setVoiceTranscript(update.transcript);
+      }
+    });
+
+    client.on("error", (error) => {
+      callActiveRef.current = false;
+      setVoiceConnecting(false);
+      setVoiceCallActive(false);
+      setVoiceError(error?.message || "Voice call failed. Please try again.");
+      setVoiceStatus("Call stopped because an error occurred.");
+      client.stopCall();
+    });
+
+    retellClientRef.current = client;
+    return client;
+  }
+
+  async function handleStartVoiceCall() {
+    if (voiceConnecting || voiceCallActive) return;
+
+    setVoiceError("");
+    setVoiceTranscript("");
+    setVoiceConnecting(true);
+    setVoiceStatus("Creating secure voice session...");
+
+    try {
+      const response = await voiceService.createWebCall();
+      if (!response.accessToken) {
+        throw new Error("Retell did not return a web call access token.");
+      }
+
+      setVoiceStatus("Starting microphone call...");
+      await getRetellClient().startCall({
+        accessToken: response.accessToken,
+        sampleRate: 24000
+      });
+    } catch (error) {
+      callActiveRef.current = false;
+      setVoiceConnecting(false);
+      setVoiceCallActive(false);
+      setVoiceError(error.message);
+      setVoiceStatus("Voice assistant is unavailable right now.");
+      showToast({ type: "error", title: "Voice call failed", message: error.message });
+    }
+  }
+
+  function handleStopVoiceCall() {
+    if (!retellClientRef.current) return;
+    setVoiceStatus("Ending call...");
+    retellClientRef.current.stopCall();
+  }
+
+  function handleCloseVoicePanel() {
+    if ((voiceCallActive || voiceConnecting) && retellClientRef.current) {
+      retellClientRef.current.stopCall();
+    }
+    setVoiceOpen(false);
+  }
 
   async function handleSubmit(payload) {
     setLoading(true);
@@ -400,15 +506,43 @@ export default function PublicLeadFormPage({ showToast }) {
       </div>
 
       {voiceOpen && (
-        <FloatingPanel title="AI Voice Assistant" onClose={() => setVoiceOpen(false)}>
+        <FloatingPanel title="AI Voice Assistant" onClose={handleCloseVoicePanel}>
           <div className="space-y-4">
             <div className="rounded-lg bg-emerald-50 p-4 text-emerald-800">
-              <p className="font-bold">Voice agent placeholder</p>
-              <p className="mt-1 text-sm">Retell and Twilio can connect here later. For now, patients can request a callback.</p>
+              <p className="font-bold">Talk with our AI receptionist</p>
+              <p className="mt-1 text-sm">Click start, allow microphone access, and share your dental service, name, email, and phone.</p>
             </div>
-            <a className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-700" href="#contact" onClick={() => setVoiceOpen(false)}>
-              Request callback <Phone size={18} />
-            </a>
+
+            <div className="rounded-lg border border-emerald-100 bg-white p-4">
+              <div className="flex items-center gap-3">
+                <span className={`h-3 w-3 rounded-full ${voiceCallActive ? "bg-emerald-500" : voiceConnecting ? "bg-amber-400" : "bg-gray-300"}`} />
+                <p className="text-sm font-semibold text-gray-800">{voiceStatus}</p>
+              </div>
+              {voiceError && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{voiceError}</p>}
+              {voiceTranscript && (
+                <div className="mt-3 max-h-32 overflow-y-auto rounded-lg bg-gray-50 p-3 text-sm leading-6 text-gray-600">
+                  {voiceTranscript}
+                </div>
+              )}
+            </div>
+
+            {voiceCallActive ? (
+              <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 font-bold text-white hover:bg-red-700" onClick={handleStopVoiceCall}>
+                End Call <Phone size={18} />
+              </button>
+            ) : (
+              <button
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={handleStartVoiceCall}
+                disabled={voiceConnecting}
+              >
+                {voiceConnecting ? "Starting..." : "Start Voice Call"} <Phone size={18} />
+              </button>
+            )}
+
+            <p className="text-xs leading-5 text-gray-500">
+              The call is handled by Retell AI. Leads are saved after call analysis when email, phone, name, and service are collected.
+            </p>
           </div>
         </FloatingPanel>
       )}

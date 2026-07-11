@@ -1,8 +1,8 @@
-import { Archive, Pencil } from "lucide-react";
+import { Archive, Mic, Pencil } from "lucide-react";
 import { STATUSES } from "../utils/constants";
 import { formatDateTime } from "../utils/formatters";
 
-export default function LeadMobileCard({ lead, onStatusChange, onEdit, onArchive, disabled, archiving }) {
+export default function LeadMobileCard({ lead, onStatusChange, onEdit, onArchive, onVoiceDetails, disabled, archiving }) {
   return (
     <div className="rounded-lg border border-emerald-100 bg-white p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
@@ -39,6 +39,15 @@ export default function LeadMobileCard({ lead, onStatusChange, onEdit, onArchive
           <Archive size={16} />
           Archive
         </button>
+        {lead.source === "AI Voice Agent" && (
+          <button
+            className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+            onClick={() => onVoiceDetails(lead)}
+          >
+            <Mic size={16} />
+            Recording & Transcript
+          </button>
+        )}
       </div>
     </div>
   );

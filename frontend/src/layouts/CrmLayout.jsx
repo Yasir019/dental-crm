@@ -5,7 +5,12 @@ import Sidebar from "../components/Sidebar";
 const titles = {
   dashboard: "Dashboard",
   leads: "Leads Management",
+  "leads-website-form": "Website Form Leads",
+  "leads-google-form": "Google Form Leads",
+  "leads-ai-chatbot": "AI Chatbot Leads",
+  "leads-ai-voice": "AI Voice Leads",
   followup: "Follow-up Center",
+  archive: "Archive",
   sources: "Lead Sources",
   settings: "Settings"
 };

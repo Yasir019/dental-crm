@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.schemas.leads import ArchiveUpdate, FollowupUpdate, LeadCreate, LeadUpdate, StatusUpdate
 from app.services.ai_service import generate_followup_template
 from app.services.email_service import send_email
-from app.services.leads_service import archive_lead, create_lead, delete_lead, get_archived_leads, get_lead_chat_messages, get_leads, update_lead_details, update_lead_followup, update_lead_status
+from app.services.leads_service import archive_lead, create_lead, delete_lead, get_archived_leads, get_lead_chat_messages, get_lead_voice_call, get_leads, update_lead_details, update_lead_followup, update_lead_status
 from app.utils.validation import FOLLOWUP_STATUSES, STATUSES, require_allowed, validate_lead
 
 router = APIRouter(prefix="/api/leads", tags=["leads"])
@@ -41,6 +41,11 @@ async def archived_leads_handler():
 @router.get("/{lead_id}/chat-messages")
 async def lead_chat_messages_handler(lead_id: str):
     return {"messages": await get_lead_chat_messages(lead_id)}
+
+
+@router.get("/{lead_id}/voice-call")
+async def lead_voice_call_handler(lead_id: str):
+    return {"voiceCall": await get_lead_voice_call(lead_id)}
 
 
 @router.patch("/status")

@@ -5,6 +5,7 @@ import EmptyState from "../components/EmptyState";
 import FiltersBar from "../components/FiltersBar";
 import LeadForm from "../components/LeadForm";
 import LeadsTable from "../components/LeadsTable";
+import VoiceCallModal from "../components/VoiceCallModal";
 import { leadsService } from "../services/leadsService";
 
 const PAGE_SIZE = 5;
@@ -14,11 +15,29 @@ const initialFilters = {
   startDate: "",
   endDate: "",
   service: "",
-  status: "",
-  source: ""
+  status: ""
 };
 
-export default function LeadsPage({ leads, setLeads, showToast }) {
+const sourceCopy = {
+  "Website Form": {
+    title: "Website Form Leads",
+    description: "Inquiries submitted from the public dental website form."
+  },
+  "Google Form": {
+    title: "Google Form Leads",
+    description: "Patients captured from connected Google Forms."
+  },
+  "AI Chatbot": {
+    title: "AI Chatbot Leads",
+    description: "Leads qualified through the website AI chatbot."
+  },
+  "AI Voice Agent": {
+    title: "AI Voice Leads",
+    description: "Inbound callers captured by the Retell AI voice agent."
+  }
+};
+
+export default function LeadsPage({ leads, setLeads, showToast, sourceFilter = "", title, description }) {
   const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
   const [updatingId, setUpdatingId] = useState(null);
@@ -28,6 +47,9 @@ export default function LeadsPage({ leads, setLeads, showToast }) {
   const [savingEdit, setSavingEdit] = useState(false);
   const [archivingId, setArchivingId] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
+  const [voiceLead, setVoiceLead] = useState(null);
+  const pageTitle = title || sourceCopy[sourceFilter]?.title || "Lead pipeline";
+  const pageDescription = description || sourceCopy[sourceFilter]?.description || "Add a walk-in, phone, or manually collected dental inquiry.";
 
   const filteredLeads = useMemo(() => {
     const search = filters.search.toLowerCase();
@@ -38,10 +60,10 @@ export default function LeadsPage({ leads, setLeads, showToast }) {
       const beforeEnd = !filters.endDate || (leadDate && leadDate <= new Date(`${filters.endDate}T23:59:59`));
       const matchesService = !filters.service || lead.service === filters.service;
       const matchesStatus = !filters.status || lead.status === filters.status;
-      const matchesSource = !filters.source || lead.source === filters.source;
+      const matchesSource = !sourceFilter || lead.source === sourceFilter;
       return matchesSearch && afterStart && beforeEnd && matchesService && matchesStatus && matchesSource;
     });
-  }, [filters, leads]);
+  }, [filters, leads, sourceFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
   const visibleLeads = filteredLeads.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -119,8 +141,8 @@ export default function LeadsPage({ leads, setLeads, showToast }) {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 rounded-lg border border-emerald-100 bg-white p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-lg font-bold text-gray-900">Lead pipeline</h3>
-          <p className="text-sm text-gray-500">Add a walk-in, phone, or manually collected dental inquiry.</p>
+          <h3 className="text-lg font-bold text-gray-900">{pageTitle}</h3>
+          <p className="text-sm text-gray-500">{pageDescription}</p>
         </div>
         <button
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-2.5 text-sm font-semibold text-white shadow transition hover:from-emerald-700 hover:to-green-600"
@@ -150,6 +172,8 @@ export default function LeadsPage({ leads, setLeads, showToast }) {
           onArchive={setArchiveTarget}
           updatingId={updatingId}
           archivingId={archivingId}
+          onVoiceDetails={setVoiceLead}
+          showSourceColumn={!sourceFilter}
         />
       )}
 
@@ -227,6 +251,8 @@ export default function LeadsPage({ leads, setLeads, showToast }) {
         onCancel={() => setArchiveTarget(null)}
         onConfirm={() => handleArchiveLead(archiveTarget)}
       />
+
+      {voiceLead && <VoiceCallModal lead={voiceLead} onClose={() => setVoiceLead(null)} showToast={showToast} />}
     </div>
   );
 }

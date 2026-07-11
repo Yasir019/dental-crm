@@ -4,6 +4,7 @@ export const leadsService = {
   createLead: (payload) => api.post("/leads/create", payload),
   getLeads: () => api.get("/leads"),
   getArchivedLeads: () => api.get("/leads/archived"),
+  getVoiceCall: (id) => api.get(`/leads/${id}/voice-call`),
   updateLead: (id, payload) => api.patch(`/leads/${id}`, payload),
   archiveLead: (id) => api.patch("/leads/archive", { id, archived: true }),
   restoreLead: (id) => api.patch("/leads/archive", { id, archived: false }),

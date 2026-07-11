@@ -19,10 +19,10 @@ create table if not exists public.leads (
   archived_at timestamptz,
 
   constraint leads_status_check check (
-    status in ('Pending', 'Contacted', 'Booked', 'Not Interested')
+    status in ('Pending', 'Qualified', 'Not Qualified')
   ),
   constraint leads_followup_check check (
-    followup in ('Pending', 'Email Sent', 'Call Scheduled', 'Completed')
+    followup in ('Pending', 'Email Sent', 'No Followup Needed')
   ),
   constraint leads_source_check check (
     source in (
@@ -104,6 +104,36 @@ create index if not exists lead_chat_messages_lead_id_idx
 
 create index if not exists lead_chat_messages_session_id_idx
   on public.lead_chat_messages (session_id);
+
+create table if not exists public.lead_voice_calls (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid references public.leads(id) on delete set null,
+  retell_call_id text unique,
+  phone_number text not null default '',
+  from_number text not null default '',
+  to_number text not null default '',
+  call_status text not null default '',
+  call_summary text not null default '',
+  transcript text not null default '',
+  recording_url text not null default '',
+  user_sentiment text not null default '',
+  call_successful boolean,
+  custom_analysis_data jsonb not null default '{}'::jsonb,
+  raw_payload jsonb not null default '{}'::jsonb,
+  started_at timestamptz,
+  ended_at timestamptz,
+  duration_seconds integer,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists lead_voice_calls_lead_id_idx
+  on public.lead_voice_calls (lead_id);
+
+create index if not exists lead_voice_calls_retell_call_id_idx
+  on public.lead_voice_calls (retell_call_id);
+
+create index if not exists lead_voice_calls_created_at_idx
+  on public.lead_voice_calls (created_at desc);
 
 create or replace function public.set_updated_at()
 returns trigger as $$
