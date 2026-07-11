@@ -77,6 +77,33 @@ const initialChatMessages = [
 ];
 const VOICE_CALL_CONNECT_TIMEOUT_MS = 15000;
 
+function getErrorMessage(error, fallback = "Something went wrong. Please try again.") {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") return error.message;
+  return fallback;
+}
+
+function formatRetellTranscript(transcript) {
+  if (!transcript) return "";
+  if (typeof transcript === "string") return transcript;
+  if (Array.isArray(transcript)) {
+    return transcript
+      .map((item) => {
+        if (typeof item === "string") return item;
+        const role = item?.role || item?.speaker || item?.sender;
+        const content = item?.content || item?.text || item?.message || item?.transcript;
+        return [role, content].filter(Boolean).join(": ");
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (typeof transcript === "object") {
+    return transcript.content || transcript.text || transcript.message || JSON.stringify(transcript, null, 2);
+  }
+  return String(transcript);
+}
+
 function createChatSessionId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -141,7 +168,7 @@ export default function PublicLeadFormPage({ showToast }) {
 
     client.on("update", (update) => {
       if (update?.transcript) {
-        setVoiceTranscript(update.transcript);
+        setVoiceTranscript(formatRetellTranscript(update.transcript));
       }
     });
 
@@ -149,7 +176,7 @@ export default function PublicLeadFormPage({ showToast }) {
       callActiveRef.current = false;
       setVoiceConnecting(false);
       setVoiceCallActive(false);
-      setVoiceError(error?.message || "Voice call failed. Please try again.");
+      setVoiceError(getErrorMessage(error, "Voice call failed. Please try again."));
       setVoiceStatus("Call stopped because an error occurred.");
       try {
         client.stopCall();
@@ -200,14 +227,15 @@ export default function PublicLeadFormPage({ showToast }) {
       callActiveRef.current = false;
       setVoiceConnecting(false);
       setVoiceCallActive(false);
-      setVoiceError(error.message || "Voice call failed. Please try again.");
+      const message = getErrorMessage(error, "Voice call failed. Please try again.");
+      setVoiceError(message);
       setVoiceStatus("Voice assistant is unavailable right now.");
       try {
         retellClientRef.current?.stopCall();
       } catch {
         // Ignore cleanup errors after a failed connection attempt.
       }
-      showToast({ type: "error", title: "Voice call failed", message: error.message || "Please try again." });
+      showToast({ type: "error", title: "Voice call failed", message });
     }
   }
 
