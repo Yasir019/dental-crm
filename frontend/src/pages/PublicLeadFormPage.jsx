@@ -560,20 +560,15 @@ export default function PublicLeadFormPage({ showToast }) {
 
       {voiceOpen && (
         <FloatingPanel title="AI Voice Assistant" onClose={handleCloseVoicePanel}>
-          <div className="space-y-4">
-            <div className="rounded-lg bg-emerald-50 p-4 text-emerald-800">
-              <p className="font-bold">Talk with our AI receptionist</p>
-              <p className="mt-1 text-sm">Click start, allow microphone access, and share your dental service, name, email, and phone.</p>
-            </div>
-
-            <div className="rounded-lg border border-emerald-100 bg-white p-4">
+          <div className="space-y-3">
+            <div className="rounded-lg border border-emerald-100 bg-white p-4 shadow-sm">
               <div className="flex items-center gap-3">
-                <span className={`h-3 w-3 rounded-full ${voiceCallActive ? "bg-emerald-500" : voiceConnecting ? "bg-amber-400" : "bg-gray-300"}`} />
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${voiceCallActive ? "bg-emerald-500" : voiceConnecting ? "bg-amber-400" : "bg-gray-300"}`} />
                 <p className="text-sm font-semibold text-gray-800">{voiceStatus}</p>
               </div>
               {voiceError && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{voiceError}</p>}
               {voiceTranscript && (
-                <div className="mt-3 max-h-32 overflow-y-auto rounded-lg bg-gray-50 p-3 text-sm leading-6 text-gray-600">
+                <div className="mt-3 max-h-40 whitespace-pre-line overflow-y-auto rounded-lg bg-gray-50 p-3 text-sm leading-6 text-gray-600">
                   {voiceTranscript}
                 </div>
               )}
@@ -592,17 +587,13 @@ export default function PublicLeadFormPage({ showToast }) {
                 {voiceConnecting ? "Starting..." : "Start Voice Call"} <Phone size={18} />
               </button>
             )}
-
-            <p className="text-xs leading-5 text-gray-500">
-              The call is handled by Retell AI. Leads are saved after call analysis when email, phone, name, and service are collected.
-            </p>
           </div>
         </FloatingPanel>
       )}
 
       {chatOpen && (
         <FloatingPanel title="Dental Chat Assistant" onClose={() => setChatOpen(false)}>
-          <form className="space-y-4" onSubmit={handleChatSubmit}>
+          <form className="space-y-3" onSubmit={handleChatSubmit}>
             <div className="h-80 space-y-3 overflow-y-auto rounded-lg bg-gray-50 p-3">
               {chatMessages.map((message, index) => (
                 <div key={`${message.role}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -635,9 +626,6 @@ export default function PublicLeadFormPage({ showToast }) {
                 Send
               </button>
             </div>
-            <p className="text-xs leading-5 text-gray-500">
-              The assistant can answer general service questions and collect name, phone, email, and service for clinic follow-up.
-            </p>
           </form>
         </FloatingPanel>
       )}
