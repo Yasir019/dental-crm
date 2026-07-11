@@ -75,6 +75,7 @@ const initialChatMessages = [
     content: "Hi, I am the clinic assistant. Ask me about our dental services, or tell me what you need help with."
   }
 ];
+const VOICE_CALL_CONNECT_TIMEOUT_MS = 15000;
 
 function createChatSessionId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -150,7 +151,11 @@ export default function PublicLeadFormPage({ showToast }) {
       setVoiceCallActive(false);
       setVoiceError(error?.message || "Voice call failed. Please try again.");
       setVoiceStatus("Call stopped because an error occurred.");
-      client.stopCall();
+      try {
+        client.stopCall();
+      } catch {
+        // The SDK may already have closed the call by the time this event fires.
+      }
     });
 
     retellClientRef.current = client;
@@ -172,17 +177,37 @@ export default function PublicLeadFormPage({ showToast }) {
       }
 
       setVoiceStatus("Starting microphone call...");
-      await getRetellClient().startCall({
-        accessToken: response.accessToken,
-        sampleRate: 24000
+      const client = getRetellClient();
+      const timeout = new Promise((_, reject) => {
+        window.setTimeout(() => {
+          reject(new Error("Voice call could not connect. Please allow microphone access and try again."));
+        }, VOICE_CALL_CONNECT_TIMEOUT_MS);
       });
+
+      await Promise.race([
+        client.startCall({
+          accessToken: response.accessToken,
+          sampleRate: 24000
+        }),
+        timeout
+      ]);
+
+      callActiveRef.current = true;
+      setVoiceConnecting(false);
+      setVoiceCallActive(true);
+      setVoiceStatus("Call connected. You can speak with the dental AI assistant now.");
     } catch (error) {
       callActiveRef.current = false;
       setVoiceConnecting(false);
       setVoiceCallActive(false);
-      setVoiceError(error.message);
+      setVoiceError(error.message || "Voice call failed. Please try again.");
       setVoiceStatus("Voice assistant is unavailable right now.");
-      showToast({ type: "error", title: "Voice call failed", message: error.message });
+      try {
+        retellClientRef.current?.stopCall();
+      } catch {
+        // Ignore cleanup errors after a failed connection attempt.
+      }
+      showToast({ type: "error", title: "Voice call failed", message: error.message || "Please try again." });
     }
   }
 
