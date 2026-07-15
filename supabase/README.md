@@ -15,3 +15,5 @@ Suggested order:
 3. `lead-chat-messages.sql`
 4. `lead-archive.sql`
 5. `lead-voice-calls.sql`
+6. `lead-followup-automation.sql`
+7. `appointments.sql`

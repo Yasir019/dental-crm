@@ -22,7 +22,7 @@ create table if not exists public.leads (
     status in ('Pending', 'Qualified', 'Not Qualified')
   ),
   constraint leads_followup_check check (
-    followup in ('Pending', 'Email Sent', 'No Followup Needed')
+    followup in ('Pending', 'Email Sent', 'Callback Started', 'Email & Callback', 'No Followup Needed')
   ),
   constraint leads_source_check check (
     source in (
@@ -135,6 +135,75 @@ create index if not exists lead_voice_calls_retell_call_id_idx
 create index if not exists lead_voice_calls_created_at_idx
   on public.lead_voice_calls (created_at desc);
 
+create table if not exists public.crm_followup_settings (
+  id smallint primary key default 1 check (id = 1),
+  automatic_email_enabled boolean not null default false,
+  automatic_callback_enabled boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+insert into public.crm_followup_settings (id)
+values (1)
+on conflict (id) do nothing;
+
+create table if not exists public.lead_followup_activities (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid not null references public.leads(id) on delete cascade,
+  channel text not null check (channel in ('email', 'callback')),
+  mode text not null check (mode in ('automatic', 'manual')),
+  status text not null check (status in ('queued', 'sent', 'initiated', 'failed')),
+  subject text not null default '',
+  body text not null default '',
+  provider_reference text not null default '',
+  error_message text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists lead_followup_activities_lead_id_idx
+  on public.lead_followup_activities (lead_id, created_at desc);
+
+create index if not exists lead_followup_activities_channel_status_idx
+  on public.lead_followup_activities (channel, status);
+
+create table if not exists public.appointments (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid references public.leads(id) on delete set null,
+  patient_name text not null,
+  patient_email text not null default '',
+  patient_phone text not null,
+  service text not null,
+  scheduled_start timestamptz not null,
+  scheduled_end timestamptz not null,
+  timezone text not null default 'Asia/Karachi',
+  status text not null default 'Scheduled',
+  source text not null default 'Manual',
+  retell_call_id text not null default '',
+  notes text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint appointments_time_check check (scheduled_end > scheduled_start),
+  constraint appointments_status_check check (
+    status in ('Scheduled', 'Completed', 'Cancelled', 'No Show')
+  ),
+  constraint appointments_source_check check (
+    source in ('AI Callback', 'AI Voice Agent', 'Manual')
+  )
+);
+
+create index if not exists appointments_scheduled_start_idx
+  on public.appointments (scheduled_start);
+
+create index if not exists appointments_lead_id_idx
+  on public.appointments (lead_id);
+
+create index if not exists appointments_status_idx
+  on public.appointments (status);
+
+alter table public.crm_followup_settings enable row level security;
+alter table public.lead_followup_activities enable row level security;
+alter table public.appointments enable row level security;
+
 create or replace function public.set_updated_at()
 returns trigger as $$
 begin
@@ -151,4 +220,14 @@ for each row execute function public.set_updated_at();
 drop trigger if exists set_crm_users_updated_at on public.crm_users;
 create trigger set_crm_users_updated_at
 before update on public.crm_users
+for each row execute function public.set_updated_at();
+
+drop trigger if exists set_crm_followup_settings_updated_at on public.crm_followup_settings;
+create trigger set_crm_followup_settings_updated_at
+before update on public.crm_followup_settings
+for each row execute function public.set_updated_at();
+
+drop trigger if exists set_appointments_updated_at on public.appointments;
+create trigger set_appointments_updated_at
+before update on public.appointments
 for each row execute function public.set_updated_at();

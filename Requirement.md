@@ -342,6 +342,19 @@ Current database:
 
 - Supabase Postgres
 
+### Appointment booking
+
+- CRM callbacks use the Retell voice agent to book a dental appointment with the lead.
+- Clinic timezone is `Asia/Karachi`.
+- Clinic hours are Monday to Friday, 9:00 AM to 5:00 PM.
+- Saturday and Sunday are closed and cannot be booked.
+- Standard appointment duration is 30 minutes.
+- The agent must confirm the requested date and time before booking.
+- The agent must not claim a booking is confirmed until the CRM booking API succeeds.
+- Conflicting, past, weekend, and outside-hours appointments must be rejected.
+- Confirmed bookings are stored in Supabase and displayed on the CRM Calendar page.
+- CRM staff can add appointments manually and mark them Scheduled, Completed, Cancelled, or No Show.
+
 ## Backend Architecture
 
 Current backend:

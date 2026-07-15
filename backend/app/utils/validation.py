@@ -11,7 +11,7 @@ SERVICES = [
 ]
 
 STATUSES = ["Pending", "Qualified", "Not Qualified"]
-FOLLOWUP_STATUSES = ["Pending", "Email Sent", "No Followup Needed"]
+FOLLOWUP_STATUSES = ["Pending", "Email Sent", "Callback Started", "Email & Callback", "No Followup Needed"]
 LEAD_SOURCES = ["Website Form", "Google Form", "AI Voice Agent", "AI Chatbot", "Website Chatbot", "Manual Entry"]
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")

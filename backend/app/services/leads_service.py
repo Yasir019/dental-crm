@@ -163,6 +163,15 @@ async def get_leads():
     return [normalize_lead(row) for row in rows]
 
 
+async def get_lead(lead_id: str):
+    rows = await supabase_request(
+        "GET",
+        "/leads",
+        params={"select": LEAD_SELECT, "id": f"eq.{lead_id}", "limit": "1"},
+    )
+    return normalize_lead(pick_first(rows, "Lead not found."))
+
+
 async def get_archived_leads():
     rows = await supabase_request(
         "GET",

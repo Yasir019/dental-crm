@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Archive, Bot, ChevronLeft, ChevronRight, ClipboardList, FileText, GitBranch, Globe2, LayoutDashboard, LogOut, Menu, Mic, PhoneCall, Settings, X } from "lucide-react";
+import { Archive, Bot, CalendarDays, ChevronLeft, ChevronRight, ClipboardList, FileText, GitBranch, Globe2, LayoutDashboard, LogOut, Menu, Mic, PhoneCall, Settings, X } from "lucide-react";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -15,6 +15,7 @@ const navItems = [
     ]
   },
   { id: "followup", label: "Followup", icon: PhoneCall },
+  { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "archive", label: "Archive", icon: Archive },
   { id: "sources", label: "Sources", icon: GitBranch },
   { id: "settings", label: "Settings", icon: Settings }

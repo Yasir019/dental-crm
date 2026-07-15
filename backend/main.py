@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
-from app.api.routes import ai, auth, chatbot, email, integrations, leads, voice
+from app.api.routes import ai, appointments, auth, chatbot, email, followups, integrations, leads, voice
 
 app = FastAPI(title="DentalLead CRM API")
 
@@ -50,6 +50,9 @@ app.include_router(auth.router)
 app.include_router(ai.router)
 app.include_router(email.router)
 app.include_router(voice.router)
+app.include_router(followups.router)
+app.include_router(appointments.router)
+app.include_router(appointments.integration_router)
 
 
 if __name__ == "__main__":

@@ -9,7 +9,9 @@ const titles = {
   "leads-google-form": "Google Form Leads",
   "leads-ai-chatbot": "AI Chatbot Leads",
   "leads-ai-voice": "AI Voice Leads",
+  "lead-detail": "Lead Details",
   followup: "Follow-up Center",
+  calendar: "Appointment Calendar",
   archive: "Archive",
   sources: "Lead Sources",
   settings: "Settings"

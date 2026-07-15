@@ -8,5 +8,5 @@ export const SERVICES = [
 ];
 
 export const STATUSES = ["Pending", "Qualified", "Not Qualified"];
-export const FOLLOWUP_STATUSES = ["Pending", "Email Sent", "No Followup Needed"];
+export const FOLLOWUP_STATUSES = ["Pending", "Email Sent", "Callback Started", "Email & Callback", "No Followup Needed"];
 export const LEAD_SOURCES = ["Website Form", "Google Form", "AI Voice Agent", "AI Chatbot", "Website Chatbot", "Manual Entry"];

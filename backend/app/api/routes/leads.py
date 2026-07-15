@@ -1,31 +1,19 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from app.schemas.leads import ArchiveUpdate, FollowupUpdate, LeadCreate, LeadUpdate, StatusUpdate
-from app.services.ai_service import generate_followup_template
-from app.services.email_service import send_email
-from app.services.leads_service import archive_lead, create_lead, delete_lead, get_archived_leads, get_lead_chat_messages, get_lead_voice_call, get_leads, update_lead_details, update_lead_followup, update_lead_status
+from app.services.followup_service import dispatch_automatic_followup
+from app.services.leads_service import archive_lead, create_lead, delete_lead, get_archived_leads, get_lead, get_lead_chat_messages, get_lead_voice_call, get_leads, update_lead_details, update_lead_followup, update_lead_status
 from app.utils.validation import FOLLOWUP_STATUSES, STATUSES, require_allowed, validate_lead
 
 router = APIRouter(prefix="/api/leads", tags=["leads"])
 
 
 @router.post("/create", status_code=201)
-async def create_lead_handler(payload: LeadCreate):
+async def create_lead_handler(payload: LeadCreate, background_tasks: BackgroundTasks):
     data = payload.model_dump()
     validate_lead(data)
     lead = await create_lead(data)
-    email_status = {"sent": False, "message": "Automatic email was not sent."}
-    saved_lead = lead
-
-    try:
-        template = await generate_followup_template(lead["name"], lead["service"])
-        await send_email(lead["email"], template["subject"], template["body"])
-        saved_lead = await update_lead_followup(lead["id"], "Email Sent")
-        email_status = {"sent": True, "message": "Automatic follow-up email sent."}
-    except Exception as error:
-        print(f"Automatic lead email failed: {error}")
-        email_status = {"sent": False, "message": "Lead was saved, but automatic email could not be sent."}
-
-    return {"message": "Lead created successfully.", "lead": saved_lead, "emailStatus": email_status}
+    background_tasks.add_task(dispatch_automatic_followup, lead)
+    return {"message": "Lead created successfully.", "lead": lead}
 
 
 @router.get("")
@@ -36,6 +24,11 @@ async def list_leads_handler():
 @router.get("/archived")
 async def archived_leads_handler():
     return {"leads": await get_archived_leads()}
+
+
+@router.get("/{lead_id}")
+async def lead_detail_handler(lead_id: str):
+    return {"lead": await get_lead(lead_id)}
 
 
 @router.get("/{lead_id}/chat-messages")

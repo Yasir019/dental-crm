@@ -1,10 +1,10 @@
-import { Archive, Mic, Pencil } from "lucide-react";
+import { Archive, Eye, Mic, Pencil } from "lucide-react";
 import { STATUSES } from "../utils/constants";
 import { formatDateTime } from "../utils/formatters";
 import LeadMobileCard from "./LeadMobileCard";
 import Pagination from "./Pagination";
 
-export default function LeadsTable({ leads, page, totalPages, onPageChange, onStatusChange, onEdit, onArchive, onVoiceDetails, updatingId, archivingId, showSourceColumn = true }) {
+export default function LeadsTable({ leads, page, totalPages, onPageChange, onStatusChange, onView, onEdit, onArchive, onVoiceDetails, updatingId, archivingId, showSourceColumn = true }) {
   const headers = ["Time", "Name", "Phone", "Email", "Service"];
   if (showSourceColumn) headers.push("Source");
   headers.push("Followup", "Mark As", "Actions");
@@ -26,7 +26,7 @@ export default function LeadsTable({ leads, page, totalPages, onPageChange, onSt
             {leads.map((lead) => (
               <tr key={lead.id} className="transition hover:bg-emerald-50/60">
                 <td className="px-4 py-4 text-sm text-gray-600">{formatDateTime(lead.timestamp)}</td>
-                <td className="px-4 py-4 font-semibold text-gray-900">{lead.name}</td>
+                <td className="px-4 py-4 font-semibold text-gray-900"><button className="text-left hover:text-emerald-700" onClick={() => onView(lead)}>{lead.name}</button></td>
                 <td className="px-4 py-4 text-sm text-gray-600">{lead.phone}</td>
                 <td className="px-4 py-4 text-sm text-gray-600">{lead.email}</td>
                 <td className="px-4 py-4 text-sm text-gray-600">{lead.service}</td>
@@ -49,6 +49,9 @@ export default function LeadsTable({ leads, page, totalPages, onPageChange, onSt
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-2">
+                    <button className="rounded-lg border border-emerald-200 p-2 text-emerald-700 hover:bg-emerald-50" onClick={() => onView(lead)} title="Open lead page">
+                      <Eye size={16} />
+                    </button>
                     <button
                       className="rounded-lg border border-emerald-200 p-2 text-emerald-700 hover:bg-emerald-50"
                       onClick={() => onEdit(lead)}
@@ -88,6 +91,7 @@ export default function LeadsTable({ leads, page, totalPages, onPageChange, onSt
             disabled={updatingId === lead.id}
             archiving={archivingId === lead.id}
             onStatusChange={onStatusChange}
+            onView={onView}
             onEdit={onEdit}
             onArchive={onArchive}
             onVoiceDetails={onVoiceDetails}

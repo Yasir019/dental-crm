@@ -3,9 +3,11 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import Toast from "./components/Toast";
 import CrmLayout from "./layouts/CrmLayout";
 import ArchivePage from "./pages/ArchivePage";
+import CalendarPage from "./pages/CalendarPage";
 import DashboardPage from "./pages/DashboardPage";
 import FollowupPage from "./pages/FollowupPage";
 import LeadsPage from "./pages/LeadsPage";
+import LeadDetailPage from "./pages/LeadDetailPage";
 import LoginPage from "./pages/LoginPage";
 import PublicLeadFormPage from "./pages/PublicLeadFormPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -22,6 +24,7 @@ const crmPathToPage = {
   "/crm/leads/ai-chatbot": "leads-ai-chatbot",
   "/crm/leads/ai-voice": "leads-ai-voice",
   "/crm/followup": "followup",
+  "/crm/calendar": "calendar",
   "/crm/archive": "archive",
   "/crm/sources": "sources",
   "/crm/settings": "settings"
@@ -35,6 +38,7 @@ const pageToCrmPath = {
   "leads-ai-chatbot": "/crm/leads/ai-chatbot",
   "leads-ai-voice": "/crm/leads/ai-voice",
   followup: "/crm/followup",
+  calendar: "/crm/calendar",
   archive: "/crm/archive",
   sources: "/crm/sources",
   settings: "/crm/settings"
@@ -47,7 +51,9 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [user, setUser] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
-  const page = crmPathToPage[route] || "dashboard";
+  const leadDetailMatch = !crmPathToPage[route] ? route.match(/^\/crm\/leads\/([^/]+)$/) : null;
+  const leadId = leadDetailMatch?.[1] || "";
+  const page = crmPathToPage[route] || (leadId ? "lead-detail" : "dashboard");
 
   function showToast(nextToast) {
     setToast({ type: "success", ...nextToast });
@@ -126,6 +132,10 @@ export default function App() {
     navigate(pageToCrmPath[nextPage] || "/crm");
   }
 
+  function handleLeadUpdated(updatedLead) {
+    setLeads((current) => current.map((lead) => (lead.id === updatedLead.id ? updatedLead : lead)));
+  }
+
   return (
     <>
       {route === "/" ? (
@@ -144,12 +154,22 @@ export default function App() {
             ) : (
               <>
                 {page === "dashboard" && <DashboardPage leads={leads} />}
-                {page === "leads" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} />}
-                {page === "leads-website-form" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} sourceFilter="Website Form" />}
-                {page === "leads-google-form" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} sourceFilter="Google Form" />}
-                {page === "leads-ai-chatbot" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} sourceFilter="AI Chatbot" />}
-                {page === "leads-ai-voice" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} sourceFilter="AI Voice Agent" />}
+                {page === "leads" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} onViewLead={(lead) => navigate(`/crm/leads/${lead.id}`)} />}
+                {page === "leads-website-form" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} onViewLead={(lead) => navigate(`/crm/leads/${lead.id}`)} sourceFilter="Website Form" />}
+                {page === "leads-google-form" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} onViewLead={(lead) => navigate(`/crm/leads/${lead.id}`)} sourceFilter="Google Form" />}
+                {page === "leads-ai-chatbot" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} onViewLead={(lead) => navigate(`/crm/leads/${lead.id}`)} sourceFilter="AI Chatbot" />}
+                {page === "leads-ai-voice" && <LeadsPage leads={leads} setLeads={setLeads} showToast={showToast} onViewLead={(lead) => navigate(`/crm/leads/${lead.id}`)} sourceFilter="AI Voice Agent" />}
+                {page === "lead-detail" && (
+                  <LeadDetailPage
+                    leadId={leadId}
+                    cachedLead={leads.find((lead) => lead.id === leadId)}
+                    onBack={() => navigate("/crm/leads")}
+                    onLeadUpdated={handleLeadUpdated}
+                    showToast={showToast}
+                  />
+                )}
                 {page === "followup" && <FollowupPage leads={leads} setLeads={setLeads} showToast={showToast} />}
+                {page === "calendar" && <CalendarPage leads={leads} showToast={showToast} />}
                 {page === "archive" && <ArchivePage showToast={showToast} />}
                 {page === "sources" && <SourcesPage />}
                 {page === "settings" && <SettingsPage user={user} setUser={setUser} showToast={showToast} />}

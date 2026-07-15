@@ -37,7 +37,7 @@ const sourceCopy = {
   }
 };
 
-export default function LeadsPage({ leads, setLeads, showToast, sourceFilter = "", title, description }) {
+export default function LeadsPage({ leads, setLeads, showToast, onViewLead, sourceFilter = "", title, description }) {
   const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
   const [updatingId, setUpdatingId] = useState(null);
@@ -168,6 +168,7 @@ export default function LeadsPage({ leads, setLeads, showToast, sourceFilter = "
           totalPages={totalPages}
           onPageChange={setPage}
           onStatusChange={handleStatusChange}
+          onView={onViewLead}
           onEdit={setEditingLead}
           onArchive={setArchiveTarget}
           updatingId={updatingId}

@@ -3,6 +3,7 @@ import { api } from "./api";
 export const leadsService = {
   createLead: (payload) => api.post("/leads/create", payload),
   getLeads: () => api.get("/leads"),
+  getLead: (id) => api.get(`/leads/${id}`),
   getArchivedLeads: () => api.get("/leads/archived"),
   getVoiceCall: (id) => api.get(`/leads/${id}/voice-call`),
   updateLead: (id, payload) => api.patch(`/leads/${id}`, payload),

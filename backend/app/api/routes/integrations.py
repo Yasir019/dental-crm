@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
 from app.core.config import settings
 from app.schemas.chatbot import ChatbotLeadCreate
 from app.schemas.leads import LeadCreate
 from app.schemas.voice import VoiceLeadCreate
+from app.schemas.followups import AutomaticLeadCallbackRequest, AutomaticLeadEmailRequest
+from app.services.followup_service import dispatch_automatic_followup, send_lead_email, start_lead_callback
 from app.services.leads_service import create_lead, create_lead_chat_messages, create_lead_voice_call
 from app.utils.validation import validate_lead
 
@@ -10,7 +12,7 @@ router = APIRouter(prefix="/api/integrations", tags=["integrations"])
 
 
 @router.post("/google-form", status_code=201)
-async def google_form_handler(payload: LeadCreate, x_integration_key: str | None = Header(default=None)):
+async def google_form_handler(payload: LeadCreate, background_tasks: BackgroundTasks, x_integration_key: str | None = Header(default=None)):
     if not settings.integration_api_key:
         raise HTTPException(status_code=500, detail={"message": "Integration API key is not configured."})
     if x_integration_key != settings.integration_api_key:
@@ -21,6 +23,7 @@ async def google_form_handler(payload: LeadCreate, x_integration_key: str | None
     data["sourceDetail"] = data.get("sourceDetail") or "Google Form submission"
     validate_lead(data)
     lead = await create_lead(data)
+    background_tasks.add_task(dispatch_automatic_followup, lead)
     return {"message": "Google Form lead created successfully.", "lead": lead}
 
 
@@ -32,7 +35,7 @@ def require_integration_key(x_integration_key: str | None):
 
 
 @router.post("/chatbot/lead", status_code=201)
-async def chatbot_lead_handler(payload: ChatbotLeadCreate, x_integration_key: str | None = Header(default=None)):
+async def chatbot_lead_handler(payload: ChatbotLeadCreate, background_tasks: BackgroundTasks, x_integration_key: str | None = Header(default=None)):
     require_integration_key(x_integration_key)
 
     transcript = "\n".join([f"{message.role}: {message.content}" for message in payload.transcript[-12:]])
@@ -56,11 +59,12 @@ async def chatbot_lead_handler(payload: ChatbotLeadCreate, x_integration_key: st
         [message.model_dump() for message in payload.transcript],
         payload.sessionId,
     )
+    background_tasks.add_task(dispatch_automatic_followup, lead)
     return {"message": "AI chatbot lead created successfully.", "lead": lead, "chatMessages": chat_messages}
 
 
 @router.post("/voice-agent/lead", status_code=201)
-async def voice_agent_lead_handler(payload: VoiceLeadCreate, x_integration_key: str | None = Header(default=None)):
+async def voice_agent_lead_handler(payload: VoiceLeadCreate, background_tasks: BackgroundTasks, x_integration_key: str | None = Header(default=None)):
     require_integration_key(x_integration_key)
 
     notes_parts = [payload.notes or ""]
@@ -81,4 +85,21 @@ async def voice_agent_lead_handler(payload: VoiceLeadCreate, x_integration_key: 
     validate_lead(data)
     lead = await create_lead(data)
     voice_call = await create_lead_voice_call(lead["id"], payload.model_dump())
+    background_tasks.add_task(dispatch_automatic_followup, lead)
     return {"message": "AI voice lead created successfully.", "lead": lead, "voiceCall": voice_call}
+
+
+@router.post("/followup/email")
+async def automatic_followup_email_handler(payload: AutomaticLeadEmailRequest, x_integration_key: str | None = Header(default=None)):
+    require_integration_key(x_integration_key)
+    mode = payload.mode if payload.mode in ["automatic", "manual"] else "automatic"
+    result = await send_lead_email(payload.leadId, payload.subject, payload.body, mode)
+    return {"message": f"{mode.capitalize()} email sent.", **result}
+
+
+@router.post("/followup/callback")
+async def automatic_followup_callback_handler(payload: AutomaticLeadCallbackRequest, x_integration_key: str | None = Header(default=None)):
+    require_integration_key(x_integration_key)
+    mode = payload.mode if payload.mode in ["automatic", "manual"] else "automatic"
+    result = await start_lead_callback(payload.leadId, mode)
+    return {"message": f"{mode.capitalize()} AI callback started.", **result}

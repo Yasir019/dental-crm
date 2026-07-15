@@ -17,8 +17,11 @@ async function request(path, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const error = new Error(data.message || "Request failed.");
-    error.errors = data.errors;
+    const detail = data.detail && typeof data.detail === "object" ? data.detail : {};
+    const error = new Error(data.message || detail.message || "Request failed.");
+    error.errors = data.errors || detail.errors;
+    error.availableSlots = data.availableSlots || detail.availableSlots || [];
+    error.retellError = data.retellError || detail.retellError;
     throw error;
   }
 
