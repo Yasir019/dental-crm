@@ -21,7 +21,7 @@ class RetellAppointmentCreate(BaseModel):
     leadId: str
     scheduledStart: str
     durationMinutes: int = Field(default=30, ge=15, le=120)
-    notes: str = ""
-    retellCallId: str = ""
+    notes: str | None = None
+    retellCallId: str | None = None
     isEmergency: bool = False
-    emergencySummary: str = ""
+    emergencySummary: str | None = None
