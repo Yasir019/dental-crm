@@ -5,13 +5,10 @@ import {
   Baby,
   Bot,
   CalendarCheck,
-  CheckCircle2,
   CircleDot,
-  Clock,
   Crown,
   HeartHandshake,
   HeartPulse,
-  MapPin,
   Mic,
   Phone,
   ScanFace,
@@ -504,43 +501,6 @@ export default function PublicLeadFormPage({ showToast }) {
         </div>
       </section>
 
-      <section id="about" className="py-16 md:py-24">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 md:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {[
-              { icon: Clock, title: "Flexible hours", text: "Morning and evening consultation slots." },
-              { icon: ShieldCheck, title: "Care-first guidance", text: "Clear options without pressure or confusion." },
-              { icon: Phone, title: "Fast callbacks", text: "Our team responds quickly to new inquiries." },
-              { icon: MapPin, title: "Easy to visit", text: "Convenient clinic location and friendly reception." }
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.title} className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft">
-                  <Icon className="text-emerald-600" size={24} />
-                  <h3 className="mt-4 font-bold">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-gray-600">{item.text}</p>
-                </div>
-              );
-            })}
-          </div>
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">Why choose us</p>
-            <h2 className="mt-3 text-3xl font-bold text-gray-950 md:text-4xl">A calm, modern clinic experience from first click to appointment.</h2>
-            <p className="mt-5 text-lg leading-8 text-gray-600">
-              We make dental consultations easier with simple online booking, clear follow-up, and a friendly team ready to answer general questions before your visit.
-            </p>
-            <div className="mt-7 space-y-3">
-              {["Clean modern treatment rooms", "Friendly consultation process", "Service-specific appointment guidance"].map((item) => (
-                <div key={item} className="flex items-center gap-3 text-gray-700">
-                  <CheckCircle2 className="text-emerald-600" size={20} />
-                  <span className="font-medium">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="reviews" className="bg-white py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -566,19 +526,8 @@ export default function PublicLeadFormPage({ showToast }) {
       </section>
 
       <section id="contact" className="py-16 md:py-24">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 md:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">Book a consultation</p>
-            <h2 className="mt-3 text-3xl font-bold text-gray-950 md:text-4xl">Tell us what dental service you need.</h2>
-            <p className="mt-4 text-lg leading-8 text-gray-600">
-              Submit the form and our team will contact you to discuss appointment availability. This form does not provide diagnosis or medical advice.
-            </p>
-            <div className="mt-8 rounded-lg border border-emerald-100 bg-white p-5 shadow-soft">
-              <p className="font-bold">Prefer quick help?</p>
-              <p className="mt-2 text-sm leading-6 text-gray-600">Use the floating chat or voice button on the right side to share your details another way.</p>
-            </div>
-          </div>
-          <div>
+        <div className="mx-auto max-w-3xl px-4 md:px-8">
+          <div className="w-full">
             {submitted && (
               <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
                 <p className="font-semibold">Thank you. Your inquiry was received successfully.</p>
