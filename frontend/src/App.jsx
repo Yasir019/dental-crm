@@ -124,7 +124,7 @@ export default function App() {
     localStorage.removeItem("dentalLeadAuthToken");
     setUser(null);
     setLeads([]);
-    navigate("/");
+    navigate("/stafflogin");
     showToast({ title: "Logged out", message: "CRM session ended." });
   }
 
