@@ -53,14 +53,20 @@ export default function SettingsPage({ user, setUser, showToast }) {
     }
   }
 
-  async function handleAutomationSubmit(event) {
-    event.preventDefault();
+  async function handleAutomationChange(field, checked) {
+    const previous = automation;
+    const next = { ...automation, [field]: checked };
+    setAutomation(next);
     setAutomationSaving(true);
     try {
-      const result = await followupService.updateSettings(automation);
+      const result = await followupService.updateSettings({
+        automaticEmailEnabled: next.automaticEmailEnabled,
+        automaticCallbackEnabled: next.automaticCallbackEnabled
+      });
       setAutomation(result.settings);
-      showToast({ title: "Automation updated", message: "New leads will follow these email and callback rules." });
+      showToast({ title: "Automation updated", message: "The new follow-up rule is active for future leads." });
     } catch (error) {
+      setAutomation(previous);
       showToast({ type: "error", title: "Automation update failed", message: error.message });
     } finally {
       setAutomationSaving(false);
@@ -69,7 +75,7 @@ export default function SettingsPage({ user, setUser, showToast }) {
 
   return (
     <div className="grid gap-6 xl:grid-cols-2">
-      <form className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft xl:col-span-2" onSubmit={handleAutomationSubmit}>
+      <section className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft xl:col-span-2">
         <h3 className="text-lg font-bold text-gray-900">Lead Follow-up Automation</h3>
         <p className="mt-1 text-sm text-gray-500">Choose which actions run automatically after a new lead provides name, email, phone, and service.</p>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -79,8 +85,8 @@ export default function SettingsPage({ user, setUser, showToast }) {
             description="n8n creates a personalized email and sends it through the configured email provider."
             checked={automation.automaticEmailEnabled}
             configured={automation.emailConfigured && automation.workflowConfigured}
-            disabled={automationLoading || !automation.emailConfigured || !automation.workflowConfigured}
-            onChange={(checked) => setAutomation((current) => ({ ...current, automaticEmailEnabled: checked }))}
+            disabled={automationLoading || automationSaving || !automation.emailConfigured || !automation.workflowConfigured}
+            onChange={(checked) => handleAutomationChange("automaticEmailEnabled", checked)}
           />
           <AutomationToggle
             icon={PhoneCall}
@@ -88,17 +94,17 @@ export default function SettingsPage({ user, setUser, showToast }) {
             description="Retell AI calls the lead using their captured phone number and service context."
             checked={automation.automaticCallbackEnabled}
             configured={automation.callbackConfigured && automation.workflowConfigured}
-            disabled={automationLoading || !automation.callbackConfigured || !automation.workflowConfigured}
-            onChange={(checked) => setAutomation((current) => ({ ...current, automaticCallbackEnabled: checked }))}
+            disabled={automationLoading || automationSaving || !automation.callbackConfigured || !automation.workflowConfigured}
+            onChange={(checked) => handleAutomationChange("automaticCallbackEnabled", checked)}
           />
         </div>
         <div className="mt-5 flex items-center justify-between gap-4 border-t border-emerald-50 pt-5">
-          <p className="text-sm text-gray-500">When disabled, staff can still send either action manually from each lead page.</p>
-          <button className="shrink-0 rounded-lg bg-emerald-600 px-4 py-2.5 font-bold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={automationLoading || automationSaving}>
-            {automationSaving ? "Saving..." : "Save Automation"}
-          </button>
+          <p className="text-sm text-gray-500">Changes save automatically. Staff can still send either action manually from each lead page.</p>
+          <span className={`shrink-0 text-sm font-semibold ${automationSaving ? "text-amber-600" : "text-emerald-700"}`}>
+            {automationSaving ? "Saving..." : "Saved automatically"}
+          </span>
         </div>
-      </form>
+      </section>
       <form className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft" onSubmit={handleProfileSubmit}>
         <h3 className="text-lg font-bold text-gray-900">Profile Settings</h3>
         <p className="mt-1 text-sm text-gray-500">Update clinic and staff profile details.</p>
