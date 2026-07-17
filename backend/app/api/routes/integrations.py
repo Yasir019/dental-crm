@@ -11,6 +11,25 @@ from app.utils.validation import validate_lead
 router = APIRouter(prefix="/api/integrations", tags=["integrations"])
 
 
+def get_retell_call_metadata(raw_payload: dict | None) -> dict:
+    queue = [raw_payload or {}]
+    visited: set[int] = set()
+
+    while queue:
+        payload = queue.pop(0)
+        if not isinstance(payload, dict) or id(payload) in visited:
+            continue
+        visited.add(id(payload))
+
+        metadata = payload.get("metadata")
+        if isinstance(metadata, dict):
+            return metadata
+
+        queue.extend(payload.get(key) for key in ("body", "data", "call") if isinstance(payload.get(key), dict))
+
+    return {}
+
+
 @router.post("/google-form", status_code=201)
 async def google_form_handler(payload: LeadCreate, background_tasks: BackgroundTasks, x_integration_key: str | None = Header(default=None)):
     if not settings.integration_api_key:
@@ -66,6 +85,17 @@ async def chatbot_lead_handler(payload: ChatbotLeadCreate, background_tasks: Bac
 @router.post("/voice-agent/lead", status_code=201)
 async def voice_agent_lead_handler(payload: VoiceLeadCreate, background_tasks: BackgroundTasks, x_integration_key: str | None = Header(default=None)):
     require_integration_key(x_integration_key)
+
+    metadata = get_retell_call_metadata(payload.rawPayload)
+    if (
+        metadata.get("call_purpose") == "appointment_booking_callback"
+        or metadata.get("source") == "crm_followup_callback"
+    ):
+        return {
+            "message": "Outbound appointment callback analyzed; no duplicate voice lead created.",
+            "skipped": True,
+            "leadId": metadata.get("lead_id"),
+        }
 
     notes_parts = [payload.notes or ""]
     if payload.callSummary:
