@@ -81,8 +81,7 @@ async def create_retell_web_call():
 
 
 async def create_retell_phone_call(lead: dict):
-    callback_agent_id = settings.retell_callback_agent_id or settings.retell_agent_id
-    if not settings.retell_api_key or not callback_agent_id or not settings.retell_phone_number:
+    if not settings.retell_api_key or not settings.retell_callback_agent_id or not settings.retell_phone_number:
         raise HTTPException(
             status_code=500,
             detail={"message": "Retell callback is not configured. Add RETELL_API_KEY, RETELL_CALLBACK_AGENT_ID, and RETELL_PHONE_NUMBER."},
@@ -92,7 +91,7 @@ async def create_retell_phone_call(lead: dict):
     payload = {
         "from_number": settings.retell_phone_number,
         "to_number": to_number,
-        "override_agent_id": callback_agent_id,
+        "override_agent_id": settings.retell_callback_agent_id,
         "metadata": {
             "source": "crm_followup_callback",
             "lead_id": lead["id"],
