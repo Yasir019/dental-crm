@@ -3,12 +3,8 @@ from typing import Any
 from pydantic import BaseModel
 
 
-class VoiceLeadCreate(BaseModel):
+class VoiceCallAnalysis(BaseModel):
     callId: str | None = None
-    name: str
-    phone: str
-    email: str
-    service: str
     notes: str | None = ""
     transcript: str | None = ""
     callSummary: str | None = ""
@@ -23,3 +19,15 @@ class VoiceLeadCreate(BaseModel):
     callSuccessful: bool | None = None
     customAnalysisData: dict[str, Any] | None = None
     rawPayload: dict[str, Any] | None = None
+
+
+class VoiceLeadCreate(VoiceCallAnalysis):
+    name: str
+    phone: str
+    email: str
+    service: str
+
+
+class FollowupVoiceCallCreate(VoiceCallAnalysis):
+    leadId: str
+    phone: str | None = ""

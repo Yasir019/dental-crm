@@ -131,10 +131,6 @@ export default function Sidebar({ currentPage, onNavigate, collapsed, setCollaps
           <LogOut size={21} />
           {!collapsed && <span>Logout</span>}
         </button>
-        <div className={`mt-3 px-2 text-sm text-emerald-50 ${collapsed ? "hidden" : "block"}`}>
-          <p className="font-semibold">Dental clinic lead care</p>
-          <p className="mt-1 text-emerald-100">Track inquiries, qualify leads, and manage friendly follow-ups.</p>
-        </div>
       </div>
     </aside>
   );

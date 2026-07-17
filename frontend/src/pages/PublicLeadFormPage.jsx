@@ -384,7 +384,7 @@ export default function PublicLeadFormPage({ showToast }) {
               <Sparkles size={22} />
             </div>
             <div>
-              <p className="text-lg font-bold leading-tight">Pearl Dental Studio</p>
+              <p className="text-lg font-bold leading-tight">BrightSmile Dental Center</p>
               <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Modern smile care</p>
             </div>
           </a>
@@ -445,8 +445,8 @@ export default function PublicLeadFormPage({ showToast }) {
             <div className="relative mx-auto aspect-square w-[88%] overflow-hidden rounded-full border-[10px] border-white/15 shadow-2xl">
               <img
                 className="h-full w-full object-cover"
-                src="/images/islamabad-dental-hero.png"
-                alt="Dentist consulting with a patient at Pearl Dental Studio in Islamabad"
+                src="/images/brightsmile-dental-hero.png"
+                alt="Dentist consulting with a patient at BrightSmile Dental Center in Islamabad"
               />
             </div>
             <div className="absolute left-0 top-8 flex h-28 w-28 flex-col items-center justify-center rounded-full border-4 border-emerald-800 bg-emerald-100 text-center text-emerald-900 shadow-xl sm:h-32 sm:w-32">
@@ -602,11 +602,11 @@ export default function PublicLeadFormPage({ showToast }) {
       <footer className="bg-gray-950 py-10 text-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 md:flex-row md:items-center md:justify-between md:px-8">
           <div>
-            <p className="text-xl font-bold">Pearl Dental Studio</p>
+            <p className="text-xl font-bold">BrightSmile Dental Center</p>
             <p className="mt-2 text-sm text-gray-400">Modern dental consultations and friendly follow-up care.</p>
           </div>
           <div className="flex flex-col gap-2 text-sm text-gray-300 sm:flex-row sm:gap-6">
-            <span>hello@pearldental.test</span>
+            <span>hello@brightsmiledentalcenter.com</span>
             <span>Islamabad, Pakistan</span>
             <span>Mon to Fri, 9 AM to 5 PM</span>
           </div>

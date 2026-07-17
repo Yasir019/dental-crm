@@ -6,21 +6,26 @@ import LoadingSpinner from "./LoadingSpinner";
 
 const tabs = ["Overview", "Transcript", "Webhook Data"];
 
-export default function VoiceCallModal({ lead, onClose, showToast }) {
+export default function VoiceCallModal({ lead, callType = "lead_capture", callId = "", title = "Call Details", onClose, showToast }) {
   const [activeTab, setActiveTab] = useState("Overview");
   const [voiceCall, setVoiceCall] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     let ignore = false;
     setLoading(true);
+    setLoadError("");
     leadsService
-      .getVoiceCall(lead.id)
+      .getVoiceCall(lead.id, { callType, callId })
       .then((data) => {
         if (!ignore) setVoiceCall(data.voiceCall);
       })
       .catch((error) => {
-        if (!ignore) showToast({ type: "error", title: "Could not load call", message: error.message });
+        if (!ignore) {
+          setLoadError(error.message);
+          showToast({ type: "error", title: "Could not load call", message: error.message });
+        }
       })
       .finally(() => {
         if (!ignore) setLoading(false);
@@ -29,7 +34,7 @@ export default function VoiceCallModal({ lead, onClose, showToast }) {
     return () => {
       ignore = true;
     };
-  }, [lead.id, showToast]);
+  }, [callId, callType, lead.id, showToast]);
 
   const transcriptLines = (voiceCall?.transcript || "")
     .split(/\n+/)
@@ -43,9 +48,11 @@ export default function VoiceCallModal({ lead, onClose, showToast }) {
           <div>
             <div className="flex items-center gap-2 text-gray-900">
               <Phone size={22} />
-              <h3 className="text-xl font-bold">Call Details</h3>
+              <h3 className="text-xl font-bold">{title}</h3>
             </div>
-            <p className="mt-1 text-sm text-gray-500">View voice agent call for {lead.name}</p>
+            <p className="mt-1 text-sm text-gray-500">
+              {callType === "followup" ? "Outbound appointment follow-up" : "Original lead capture"} for {lead.name}
+            </p>
           </div>
           <button className="rounded-lg p-2 text-gray-500 hover:bg-gray-100" onClick={onClose}>
             <X size={20} />
@@ -55,6 +62,10 @@ export default function VoiceCallModal({ lead, onClose, showToast }) {
         <div className="max-h-[calc(90vh-88px)] overflow-y-auto p-5">
           {loading ? (
             <LoadingSpinner label="Loading voice call" />
+          ) : loadError ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+              Call analysis is not available yet. Retell adds the recording, transcript, and summary after the call ends.
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-3 rounded-lg bg-gray-100 p-1">
@@ -76,8 +87,8 @@ export default function VoiceCallModal({ lead, onClose, showToast }) {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Info label="Status" value={voiceCall?.callStatus || "Completed"} />
                     <Info label="Duration" value={voiceCall?.durationSeconds ? `${voiceCall.durationSeconds}s` : "-"} />
-                    <Info label="Caller" value={voiceCall?.fromNumber || lead.phone || "-"} />
-                    <Info label="Clinic Number" value={voiceCall?.toNumber || "-"} />
+                    <Info label="From" value={voiceCall?.fromNumber || (callType === "lead_capture" ? lead.phone : "-")} />
+                    <Info label="To" value={voiceCall?.toNumber || (callType === "followup" ? lead.phone : "-")} />
                     <Info label="Date & Time" value={formatDateTime(voiceCall?.startedAt || voiceCall?.createdAt || lead.timestamp)} />
                     <Info label="Sentiment" value={voiceCall?.userSentiment || "-"} />
                   </div>

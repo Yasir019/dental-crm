@@ -2,10 +2,10 @@ from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
 from app.core.config import settings
 from app.schemas.chatbot import ChatbotLeadCreate
 from app.schemas.leads import LeadCreate
-from app.schemas.voice import VoiceLeadCreate
+from app.schemas.voice import FollowupVoiceCallCreate, VoiceLeadCreate
 from app.schemas.followups import AutomaticLeadCallbackRequest, AutomaticLeadEmailRequest, EmailDeliveryStatusRequest
 from app.services.followup_service import dispatch_automatic_followup, record_lead_email_delivery, send_lead_email, start_lead_callback
-from app.services.leads_service import create_lead, create_lead_chat_messages, create_lead_voice_call
+from app.services.leads_service import create_lead, create_lead_chat_messages, create_lead_voice_call, get_lead
 from app.utils.validation import validate_lead
 
 router = APIRouter(prefix="/api/integrations", tags=["integrations"])
@@ -117,6 +117,18 @@ async def voice_agent_lead_handler(payload: VoiceLeadCreate, background_tasks: B
     voice_call = await create_lead_voice_call(lead["id"], payload.model_dump())
     background_tasks.add_task(dispatch_automatic_followup, lead)
     return {"message": "AI voice lead created successfully.", "lead": lead, "voiceCall": voice_call}
+
+
+@router.post("/voice-agent/followup-call", status_code=201)
+async def voice_agent_followup_call_handler(payload: FollowupVoiceCallCreate, x_integration_key: str | None = Header(default=None)):
+    require_integration_key(x_integration_key)
+    await get_lead(payload.leadId)
+    voice_call = await create_lead_voice_call(payload.leadId, payload.model_dump(), "followup")
+    return {
+        "message": "AI follow-up call details saved successfully.",
+        "leadId": payload.leadId,
+        "voiceCall": voice_call,
+    }
 
 
 @router.post("/followup/email")

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks
 from app.schemas.leads import ArchiveUpdate, FollowupUpdate, LeadCreate, LeadUpdate, StatusUpdate
 from app.services.followup_service import dispatch_automatic_followup
-from app.services.leads_service import archive_lead, create_lead, delete_lead, get_archived_leads, get_lead, get_lead_chat_messages, get_lead_voice_call, get_leads, update_lead_details, update_lead_followup, update_lead_status
+from app.services.leads_service import archive_lead, create_lead, delete_lead, get_archived_leads, get_lead, get_lead_chat_messages, get_lead_voice_call, get_lead_voice_calls, get_leads, update_lead_details, update_lead_followup, update_lead_status
 from app.utils.validation import FOLLOWUP_STATUSES, STATUSES, require_allowed, validate_lead
 
 router = APIRouter(prefix="/api/leads", tags=["leads"])
@@ -37,8 +37,13 @@ async def lead_chat_messages_handler(lead_id: str):
 
 
 @router.get("/{lead_id}/voice-call")
-async def lead_voice_call_handler(lead_id: str):
-    return {"voiceCall": await get_lead_voice_call(lead_id)}
+async def lead_voice_call_handler(lead_id: str, callType: str | None = None, callId: str | None = None):
+    return {"voiceCall": await get_lead_voice_call(lead_id, callType, callId)}
+
+
+@router.get("/{lead_id}/voice-calls")
+async def lead_voice_calls_handler(lead_id: str, callType: str | None = None):
+    return {"voiceCalls": await get_lead_voice_calls(lead_id, callType)}
 
 
 @router.patch("/status")

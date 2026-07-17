@@ -81,7 +81,7 @@ insert into public.crm_users (
 values (
   'Dental',
   'Dental Admin',
-  'Pearl Dental Studio',
+  'BrightSmile Dental Center',
   '',
   '',
   'dental-crm-default-salt-2026',

@@ -30,6 +30,7 @@ def normalize_voice_call(row: dict | None):
     if not row:
         return None
 
+    custom_analysis_data = row.get("custom_analysis_data") or {}
     return {
         "id": row["id"],
         "leadId": row.get("lead_id"),
@@ -43,7 +44,8 @@ def normalize_voice_call(row: dict | None):
         "recordingUrl": row.get("recording_url") or "",
         "userSentiment": row.get("user_sentiment") or "",
         "callSuccessful": row.get("call_successful"),
-        "customAnalysisData": row.get("custom_analysis_data") or {},
+        "callType": custom_analysis_data.get("call_type") or "lead_capture",
+        "customAnalysisData": custom_analysis_data,
         "rawPayload": row.get("raw_payload") or {},
         "startedAt": row.get("started_at"),
         "endedAt": row.get("ended_at"),
@@ -99,7 +101,8 @@ async def create_lead_chat_messages(lead_id: str, messages: list[dict], session_
     return await supabase_request("POST", "/lead_chat_messages", json=rows)
 
 
-async def create_lead_voice_call(lead_id: str, data: dict):
+async def create_lead_voice_call(lead_id: str, data: dict, call_type: str = "lead_capture"):
+    custom_analysis_data = {**(data.get("customAnalysisData") or {}), "call_type": call_type}
     payload = {
         "lead_id": lead_id,
         "retell_call_id": data.get("callId") or None,
@@ -112,18 +115,33 @@ async def create_lead_voice_call(lead_id: str, data: dict):
         "recording_url": data.get("recordingUrl") or "",
         "user_sentiment": data.get("userSentiment") or "",
         "call_successful": data.get("callSuccessful"),
-        "custom_analysis_data": data.get("customAnalysisData") or {},
+        "custom_analysis_data": custom_analysis_data,
         "raw_payload": data.get("rawPayload") or {},
         "started_at": data.get("startedAt") or None,
         "ended_at": data.get("endedAt") or None,
         "duration_seconds": data.get("durationSeconds"),
     }
-    rows = await supabase_request(
-        "POST",
-        "/lead_voice_calls",
-        params={"select": VOICE_CALL_SELECT},
-        json=payload,
-    )
+    existing_rows = []
+    if payload["retell_call_id"]:
+        existing_rows = await supabase_request(
+            "GET",
+            "/lead_voice_calls",
+            params={"select": "id", "retell_call_id": f"eq.{payload['retell_call_id']}", "limit": "1"},
+        )
+    if existing_rows:
+        rows = await supabase_request(
+            "PATCH",
+            "/lead_voice_calls",
+            params={"id": f"eq.{existing_rows[0]['id']}", "select": VOICE_CALL_SELECT},
+            json=payload,
+        )
+    else:
+        rows = await supabase_request(
+            "POST",
+            "/lead_voice_calls",
+            params={"select": VOICE_CALL_SELECT},
+            json=payload,
+        )
     return normalize_voice_call(pick_first(rows, "Voice call could not be saved."))
 
 
@@ -140,7 +158,7 @@ async def get_lead_chat_messages(lead_id: str):
     return rows or []
 
 
-async def get_lead_voice_call(lead_id: str):
+async def get_lead_voice_calls(lead_id: str, call_type: str | None = None, retell_call_id: str | None = None):
     rows = await supabase_request(
         "GET",
         "/lead_voice_calls",
@@ -148,10 +166,19 @@ async def get_lead_voice_call(lead_id: str):
             "select": VOICE_CALL_SELECT,
             "lead_id": f"eq.{lead_id}",
             "order": "created_at.desc",
-            "limit": "1",
         },
     )
-    return normalize_voice_call(pick_first(rows, "Voice call details not found."))
+    calls = [normalize_voice_call(row) for row in (rows or [])]
+    if call_type:
+        calls = [call for call in calls if call["callType"] == call_type]
+    if retell_call_id:
+        calls = [call for call in calls if call["retellCallId"] == retell_call_id]
+    return calls
+
+
+async def get_lead_voice_call(lead_id: str, call_type: str | None = None, retell_call_id: str | None = None):
+    calls = await get_lead_voice_calls(lead_id, call_type, retell_call_id)
+    return pick_first(calls, "Voice call details not found.")
 
 
 async def get_leads():

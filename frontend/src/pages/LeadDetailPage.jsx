@@ -18,7 +18,7 @@ export default function LeadDetailPage({ leadId, cachedLead, onBack, onLeadUpdat
   const [sending, setSending] = useState(false);
   const [callbackOpen, setCallbackOpen] = useState(false);
   const [calling, setCalling] = useState(false);
-  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceDetails, setVoiceDetails] = useState(null);
 
   async function loadActivities() {
     const result = await followupService.getActivities(leadId);
@@ -117,7 +117,10 @@ export default function LeadDetailPage({ leadId, cachedLead, onBack, onLeadUpdat
               <PhoneCall size={17} /> AI Callback
             </button>
             {lead.source === "AI Voice Agent" && (
-              <button className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-4 py-2.5 text-sm font-bold text-blue-700 hover:bg-blue-50" onClick={() => setVoiceOpen(true)}>
+              <button
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-4 py-2.5 text-sm font-bold text-blue-700 hover:bg-blue-50"
+                onClick={() => setVoiceDetails({ callType: "lead_capture", title: "Original Lead Capture Call" })}
+              >
                 <Mic size={17} /> Original Call
               </button>
             )}
@@ -184,6 +187,14 @@ export default function LeadDetailPage({ leadId, cachedLead, onBack, onLeadUpdat
                   <p className="mt-1 text-sm capitalize text-gray-600">Status: {activity.status}</p>
                   {activity.subject && <p className="mt-1 truncate text-sm text-gray-500">{activity.subject}</p>}
                   {activity.errorMessage && <p className="mt-1 text-sm text-red-600">{activity.errorMessage}</p>}
+                  {activity.channel === "callback" && activity.providerReference && (
+                    <button
+                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50"
+                      onClick={() => setVoiceDetails({ callType: "followup", callId: activity.providerReference, title: "Follow-up Call Details" })}
+                    >
+                      <Mic size={15} /> Call Details
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -201,7 +212,16 @@ export default function LeadDetailPage({ leadId, cachedLead, onBack, onLeadUpdat
         onCancel={() => setCallbackOpen(false)}
         onConfirm={startCallback}
       />
-      {voiceOpen && <VoiceCallModal lead={lead} onClose={() => setVoiceOpen(false)} showToast={showToast} />}
+      {voiceDetails && (
+        <VoiceCallModal
+          lead={lead}
+          callType={voiceDetails.callType}
+          callId={voiceDetails.callId}
+          title={voiceDetails.title}
+          onClose={() => setVoiceDetails(null)}
+          showToast={showToast}
+        />
+      )}
     </div>
   );
 }
