@@ -12,7 +12,6 @@ import {
   HeartHandshake,
   HeartPulse,
   MapPin,
-  Menu,
   Mic,
   Phone,
   ScanFace,
@@ -121,6 +120,24 @@ const stats = [
   { icon: ShieldCheck, label: "Routine Treatments", value: "800+" }
 ];
 
+const smileResults = [
+  {
+    image: "/images/smile-whitening-before-after.png",
+    title: "Professional Whitening",
+    description: "A brighter smile with a natural-looking shade."
+  },
+  {
+    image: "/images/smile-veneers-before-after.png",
+    title: "Cosmetic Veneers",
+    description: "Refined spacing and shape with a balanced finish."
+  },
+  {
+    image: "/images/smile-aligners-before-after.png",
+    title: "Clear Aligner Treatment",
+    description: "Gentle alignment for a straighter, healthier smile."
+  }
+];
+
 const testimonials = [
   {
     name: "Sarah K.",
@@ -183,7 +200,6 @@ export default function PublicLeadFormPage({ showToast }) {
   const callActiveRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [voiceConnecting, setVoiceConnecting] = useState(false);
   const [voiceCallActive, setVoiceCallActive] = useState(false);
@@ -377,51 +393,6 @@ export default function PublicLeadFormPage({ showToast }) {
 
   return (
     <main className="min-h-screen bg-emerald-50 text-gray-900">
-      <header className="sticky top-0 z-30 border-b border-emerald-100 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
-          <a href="#home" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-600 text-white">
-              <Sparkles size={22} />
-            </div>
-            <div>
-              <p className="text-lg font-bold leading-tight">BrightSmile Dental Center</p>
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Modern smile care</p>
-            </div>
-          </a>
-
-          <nav className="hidden items-center gap-7 text-sm font-semibold text-gray-600 lg:flex">
-            <a className="hover:text-emerald-700" href="#services">Services</a>
-            <a className="hover:text-emerald-700" href="#about">About</a>
-            <a className="hover:text-emerald-700" href="#reviews">Reviews</a>
-            <a className="hover:text-emerald-700" href="#contact">Contact</a>
-          </nav>
-
-          <div className="hidden items-center gap-3 lg:flex">
-            <a className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow hover:bg-emerald-700" href="#contact">
-              Book an Appointment
-            </a>
-          </div>
-
-          <button className="rounded-lg border border-emerald-100 p-2 text-emerald-700 lg:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="border-t border-emerald-100 bg-white px-4 py-4 lg:hidden">
-            <div className="mx-auto grid max-w-7xl gap-3 text-sm font-semibold text-gray-700">
-              <a href="#services" onClick={() => setMobileMenuOpen(false)}>Services</a>
-              <a href="#about" onClick={() => setMobileMenuOpen(false)}>About</a>
-              <a href="#reviews" onClick={() => setMobileMenuOpen(false)}>Reviews</a>
-              <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
-              <a className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-center font-bold text-white" href="#contact" onClick={() => setMobileMenuOpen(false)}>
-                Book an Appointment
-              </a>
-            </div>
-          </div>
-        )}
-      </header>
-
       <section id="home" className="bg-emerald-800 text-white">
         <div className="mx-auto grid max-w-7xl gap-12 px-4 py-14 md:px-8 md:py-20 lg:min-h-[610px] lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div className="relative z-10">
@@ -502,6 +473,34 @@ export default function PublicLeadFormPage({ showToast }) {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      <section id="results" className="border-y border-emerald-100 bg-emerald-50 py-16 md:py-24">
+        <div className="mx-auto max-w-7xl px-4 md:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">Realistic smile outcomes</p>
+            <h2 className="mt-3 text-3xl font-bold text-gray-950 md:text-4xl">Before &amp; After</h2>
+            <p className="mt-4 text-gray-600">See how thoughtful treatment planning can improve smile health, balance, and confidence.</p>
+          </div>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {smileResults.map((result) => (
+              <article key={result.title} className="overflow-hidden rounded-lg border border-emerald-100 bg-white shadow-sm">
+                <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                  <img className="h-full w-full object-cover" src={result.image} alt={`${result.title} illustrative before and after smile result`} />
+                  <span className="absolute left-3 top-3 rounded-md bg-gray-950/85 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">Before</span>
+                  <span className="absolute bottom-3 left-3 rounded-md bg-emerald-700 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">After</span>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-serif text-xl font-bold text-emerald-900">{result.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">{result.description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <p className="mt-6 text-center text-xs leading-5 text-gray-500">Illustrative treatment examples. Individual needs and results vary after clinical assessment.</p>
         </div>
       </section>
 
