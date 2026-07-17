@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -19,3 +21,13 @@ class AutomaticLeadEmailRequest(LeadEmailRequest):
 class AutomaticLeadCallbackRequest(BaseModel):
     leadId: str
     mode: str = "automatic"
+
+
+class EmailDeliveryStatusRequest(BaseModel):
+    leadId: str
+    subject: str = ""
+    body: str = ""
+    mode: str = "automatic"
+    status: Literal["sent", "failed"]
+    providerReference: str = ""
+    errorMessage: str = ""

@@ -3,8 +3,8 @@ from app.core.config import settings
 from app.schemas.chatbot import ChatbotLeadCreate
 from app.schemas.leads import LeadCreate
 from app.schemas.voice import VoiceLeadCreate
-from app.schemas.followups import AutomaticLeadCallbackRequest, AutomaticLeadEmailRequest
-from app.services.followup_service import dispatch_automatic_followup, send_lead_email, start_lead_callback
+from app.schemas.followups import AutomaticLeadCallbackRequest, AutomaticLeadEmailRequest, EmailDeliveryStatusRequest
+from app.services.followup_service import dispatch_automatic_followup, record_lead_email_delivery, send_lead_email, start_lead_callback
 from app.services.leads_service import create_lead, create_lead_chat_messages, create_lead_voice_call
 from app.utils.validation import validate_lead
 
@@ -95,6 +95,22 @@ async def automatic_followup_email_handler(payload: AutomaticLeadEmailRequest, x
     mode = payload.mode if payload.mode in ["automatic", "manual"] else "automatic"
     result = await send_lead_email(payload.leadId, payload.subject, payload.body, mode)
     return {"message": f"{mode.capitalize()} email sent.", **result}
+
+
+@router.post("/followup/email/status")
+async def followup_email_status_handler(payload: EmailDeliveryStatusRequest, x_integration_key: str | None = Header(default=None)):
+    require_integration_key(x_integration_key)
+    mode = payload.mode if payload.mode in ["automatic", "manual"] else "automatic"
+    result = await record_lead_email_delivery(
+        payload.leadId,
+        payload.subject,
+        payload.body,
+        mode,
+        payload.status,
+        payload.providerReference,
+        payload.errorMessage,
+    )
+    return {"message": f"Gmail delivery recorded as {payload.status}.", **result}
 
 
 @router.post("/followup/callback")

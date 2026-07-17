@@ -17,7 +17,7 @@ def normalize_settings(row: dict):
     return {
         "automaticEmailEnabled": bool(row.get("automatic_email_enabled")),
         "automaticCallbackEnabled": bool(row.get("automatic_callback_enabled")),
-        "emailConfigured": bool(settings.email_api_key and settings.email_from),
+        "emailConfigured": bool(settings.n8n_email_webhook_url),
         "callbackConfigured": bool(settings.retell_api_key and settings.retell_agent_id and settings.retell_phone_number),
         "workflowConfigured": bool(settings.n8n_email_webhook_url and settings.n8n_callback_webhook_url),
         "updatedAt": row.get("updated_at"),
@@ -49,10 +49,6 @@ async def get_followup_settings():
 
 
 async def update_followup_settings(data: dict):
-    if data["automaticEmailEnabled"] and not settings.email_api_key:
-        raise HTTPException(status_code=400, detail={"message": "Configure EMAIL_API_KEY before enabling automatic email."})
-    if data["automaticEmailEnabled"] and not settings.email_from:
-        raise HTTPException(status_code=400, detail={"message": "Configure EMAIL_FROM before enabling automatic email."})
     if data["automaticCallbackEnabled"] and not (settings.retell_api_key and settings.retell_agent_id and settings.retell_phone_number):
         raise HTTPException(status_code=400, detail={"message": "Configure Retell API key, agent, and phone number before enabling automatic callback."})
     if data["automaticEmailEnabled"] and not settings.n8n_email_webhook_url:
@@ -144,6 +140,28 @@ async def send_lead_email(lead_id: str, subject: str, body: str, mode: str):
     except Exception as error:
         await update_activity(activity["id"], "failed", error_message=str(error))
         raise
+
+
+async def record_lead_email_delivery(
+    lead_id: str,
+    subject: str,
+    body: str,
+    mode: str,
+    status: str,
+    provider_reference: str = "",
+    error_message: str = "",
+):
+    lead = await get_lead(lead_id)
+    activity = await create_activity(lead_id, "email", mode, subject.strip(), body.strip())
+    activity = await update_activity(
+        activity["id"],
+        status,
+        provider_reference.strip(),
+        error_message.strip(),
+    )
+    if status == "sent":
+        lead = await refresh_lead_followup_status(lead_id)
+    return {"lead": lead, "activity": activity}
 
 
 async def start_lead_callback(lead_id: str, mode: str):

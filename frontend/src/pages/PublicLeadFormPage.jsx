@@ -1,17 +1,28 @@
 import {
+  Activity,
+  AlignCenter,
   ArrowRight,
+  Baby,
   Bot,
   CalendarCheck,
   CheckCircle2,
+  CircleDot,
   Clock,
+  Crown,
+  HeartHandshake,
+  HeartPulse,
   MapPin,
   Menu,
-  MessageCircle,
   Mic,
   Phone,
+  ScanFace,
+  ShieldPlus,
   ShieldCheck,
+  Smile,
   Sparkles,
   Star,
+  Stethoscope,
+  WandSparkles,
   X
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -23,35 +34,91 @@ import { voiceService } from "../services/voiceService";
 
 const serviceCards = [
   {
-    title: "Dental Fillings",
-    text: "Natural-looking repairs for cavities and small tooth damage."
+    icon: Stethoscope,
+    title: "General Dentistry",
+    text: "Complete preventive care for a healthy smile."
   },
   {
-    title: "Root Canal",
-    text: "Comfort-focused treatment planning for tooth pain concerns."
+    icon: Smile,
+    title: "Cosmetic Dentistry",
+    text: "Personalized treatments designed to enhance your smile."
   },
   {
+    icon: Baby,
+    title: "Pediatric Dentistry",
+    text: "Gentle dental care for children and growing smiles."
+  },
+  {
+    icon: Sparkles,
+    title: "Scaling & Polishing",
+    text: "Professional cleaning for fresher, healthier teeth."
+  },
+  {
+    icon: ScanFace,
+    title: "Maxillofacial Surgery",
+    text: "Specialist facial and jaw treatment planning."
+  },
+  {
+    icon: WandSparkles,
     title: "Teeth Whitening",
-    text: "Brighten your smile with professional whitening guidance."
+    text: "Professional whitening for a visibly brighter smile."
   },
   {
+    icon: CircleDot,
+    title: "Dental Fillings",
+    text: "Durable, natural-looking repair for damaged teeth."
+  },
+  {
+    icon: AlignCenter,
+    title: "Orthodontics",
+    text: "Braces and alignment options for a balanced smile."
+  },
+  {
+    icon: Activity,
+    title: "Tooth Extraction",
+    text: "Careful removal when a tooth cannot be restored."
+  },
+  {
+    icon: Crown,
+    title: "Dental Crowns",
+    text: "Protect and strengthen teeth with custom crowns."
+  },
+  {
+    icon: HeartPulse,
+    title: "Root Canal",
+    text: "Relieve pain and save an infected natural tooth."
+  },
+  {
+    icon: Smile,
+    title: "Veneers",
+    text: "Refine the shape and appearance of your smile."
+  },
+  {
+    icon: ShieldPlus,
     title: "Dental Implants",
-    text: "Consultation-first care for missing tooth replacement options."
+    text: "Long-term replacement options for missing teeth."
   },
   {
-    title: "Braces",
-    text: "Explore alignment options for a more confident smile."
+    icon: HeartHandshake,
+    title: "Dentures",
+    text: "Comfortable custom solutions to restore confidence."
   },
   {
-    title: "Bonding",
-    text: "Simple cosmetic improvements for chips, gaps, and uneven edges."
+    icon: AlignCenter,
+    title: "Clear Aligners",
+    text: "Discreet removable aligners for straighter teeth."
+  },
+  {
+    icon: Activity,
+    title: "Gum Recontouring",
+    text: "Reshape the gumline for a more balanced smile."
   }
 ];
 
 const stats = [
-  { label: "Happy patients", value: "8k+" },
-  { label: "Years of care", value: "14+" },
-  { label: "Dental services", value: "6" }
+  { icon: HeartHandshake, label: "Happy Patients", value: "150+" },
+  { icon: Sparkles, label: "Smile Restorations", value: "500+" },
+  { icon: ShieldCheck, label: "Routine Treatments", value: "800+" }
 ];
 
 const testimonials = [
@@ -309,7 +376,7 @@ export default function PublicLeadFormPage({ showToast }) {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-white via-emerald-50 to-green-100 text-gray-900">
+    <main className="min-h-screen bg-emerald-50 text-gray-900">
       <header className="sticky top-0 z-30 border-b border-emerald-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
           <a href="#home" className="flex items-center gap-3">
@@ -330,8 +397,8 @@ export default function PublicLeadFormPage({ showToast }) {
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <a className="rounded-lg bg-gradient-to-r from-emerald-600 to-green-500 px-5 py-2.5 text-sm font-bold text-white shadow hover:from-emerald-700 hover:to-green-600" href="#contact">
-              Book Consultation
+            <a className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow hover:bg-emerald-700" href="#contact">
+              Book an Appointment
             </a>
           </div>
 
@@ -348,63 +415,71 @@ export default function PublicLeadFormPage({ showToast }) {
               <a href="#reviews" onClick={() => setMobileMenuOpen(false)}>Reviews</a>
               <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
               <a className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-center font-bold text-white" href="#contact" onClick={() => setMobileMenuOpen(false)}>
-                Book Consultation
+                Book an Appointment
               </a>
             </div>
           </div>
         )}
       </header>
 
-      <section id="home" className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:px-8 md:py-20 lg:grid-cols-[1fr_0.92fr] lg:items-center">
-        <div>
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-emerald-700 shadow-soft">
-            <ShieldCheck size={17} />
-            Trusted dental care for the whole family
-          </div>
-          <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-gray-950 md:text-6xl">
-            Confident smiles start with a simple consultation.
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-600">
-            Book a dental consultation, ask about a service, or let our team follow up with appointment options that fit your schedule.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-green-500 px-6 py-3 font-bold text-white shadow-lg hover:from-emerald-700 hover:to-green-600" href="#contact">
-              Request Appointment <ArrowRight size={18} />
+      <section id="home" className="bg-emerald-800 text-white">
+        <div className="mx-auto grid max-w-7xl gap-12 px-4 py-14 md:px-8 md:py-20 lg:min-h-[610px] lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div className="relative z-10">
+            <div className="mb-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-emerald-100">
+              <CalendarCheck size={18} />
+              Book a dental consultation
+            </div>
+            <h1 className="max-w-2xl font-serif text-5xl font-bold leading-[1.05] md:text-6xl">
+              Best Dental Clinic in Islamabad
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-emerald-50">
+              Trusted, comfortable dental care for families across Islamabad. From routine checkups to smile restoration, our team makes every visit clear and reassuring.
+            </p>
+            <a className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-white px-6 py-3.5 font-bold text-emerald-800 shadow-lg transition hover:bg-emerald-50" href="#contact">
+              Book an Appointment <ArrowRight size={18} />
             </a>
-            <button className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-6 py-3 font-bold text-emerald-700 hover:bg-emerald-50" onClick={() => setChatOpen(true)}>
-              Chat With Us <MessageCircle size={18} />
-            </button>
           </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            {stats.map((stat) => (
-              <div key={stat.label} className="rounded-lg border border-emerald-100 bg-white/85 p-5 shadow-soft">
-                <p className="text-3xl font-bold text-emerald-700">{stat.value}</p>
-                <p className="mt-1 text-sm font-medium text-gray-500">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative">
-          <div className="overflow-hidden rounded-[2rem] border border-emerald-100 bg-white shadow-soft">
-            <img
-              className="h-[520px] w-full object-cover"
-              src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=85"
-              alt="Modern dental clinic room"
-            />
-          </div>
-          <div className="absolute -bottom-5 left-5 right-5 rounded-lg border border-emerald-100 bg-white p-4 shadow-soft sm:left-auto sm:w-72">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                <CalendarCheck size={22} />
-              </div>
-              <div>
-                <p className="font-bold">Same-day follow-up</p>
-                <p className="text-sm text-gray-500">Submit once and our care team responds quickly.</p>
+          <div className="relative mx-auto w-full max-w-[590px] py-5">
+            <div className="absolute inset-0 m-auto h-[92%] w-[92%] rounded-full border-2 border-dashed border-emerald-200/80" />
+            <div className="relative mx-auto aspect-square w-[88%] overflow-hidden rounded-full border-[10px] border-white/15 shadow-2xl">
+              <img
+                className="h-full w-full object-cover"
+                src="/images/islamabad-dental-hero.png"
+                alt="Dentist consulting with a patient at Pearl Dental Studio in Islamabad"
+              />
+            </div>
+            <div className="absolute left-0 top-8 flex h-28 w-28 flex-col items-center justify-center rounded-full border-4 border-emerald-800 bg-emerald-100 text-center text-emerald-900 shadow-xl sm:h-32 sm:w-32">
+              <Sparkles size={24} />
+              <span className="mt-1 text-sm font-bold leading-tight">Modern Smile Care</span>
+            </div>
+            <div className="absolute bottom-8 right-0 rounded-lg border border-emerald-100 bg-white p-4 text-gray-900 shadow-xl sm:right-3">
+              <div className="flex items-center gap-3">
+                <CalendarCheck className="text-emerald-700" size={24} />
+                <div>
+                  <p className="font-bold">Easy appointment booking</p>
+                  <p className="text-sm text-gray-500">Quick follow-up from our care team</p>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section aria-label="Clinic achievements" className="border-b border-emerald-100 bg-white">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-9 sm:grid-cols-3 md:px-8 md:py-11">
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div key={stat.label} className="flex items-center justify-center gap-4 sm:justify-start">
+                <Icon className="shrink-0 text-emerald-600" size={44} strokeWidth={1.7} />
+                <div>
+                  <p className="font-serif text-4xl font-bold leading-none text-emerald-800">{stat.value}</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-500">{stat.label}</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -415,14 +490,17 @@ export default function PublicLeadFormPage({ showToast }) {
             <h2 className="mt-3 text-3xl font-bold text-gray-950 md:text-4xl">Complete dental care in one place</h2>
             <p className="mt-4 text-gray-600">Choose the service you are interested in and we will help you plan the next step.</p>
           </div>
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {serviceCards.map((service) => (
-              <div key={service.title} className="rounded-lg border border-emerald-100 bg-white p-6 shadow-soft transition hover:-translate-y-1 hover:shadow-lg">
-                <CheckCircle2 className="text-emerald-600" size={24} />
-                <h3 className="mt-4 text-lg font-bold">{service.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-gray-600">{service.text}</p>
-              </div>
-            ))}
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {serviceCards.map((service) => {
+              const Icon = service.icon;
+              return (
+                <div key={service.title} className="rounded-lg border border-emerald-100 bg-white p-5 transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg">
+                  <Icon className="text-emerald-600" size={30} strokeWidth={1.7} />
+                  <h3 className="mt-4 font-serif text-xl font-bold text-emerald-900">{service.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">{service.text}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -529,8 +607,8 @@ export default function PublicLeadFormPage({ showToast }) {
           </div>
           <div className="flex flex-col gap-2 text-sm text-gray-300 sm:flex-row sm:gap-6">
             <span>hello@pearldental.test</span>
-            <span>+1 555 010 2026</span>
-            <span>Mon to Sat, 9 AM to 7 PM</span>
+            <span>Islamabad, Pakistan</span>
+            <span>Mon to Fri, 9 AM to 5 PM</span>
           </div>
         </div>
       </footer>

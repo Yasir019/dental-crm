@@ -1,10 +1,20 @@
 export const SERVICES = [
+  "General Dentistry",
+  "Cosmetic Dentistry",
+  "Pediatric Dentistry",
+  "Scaling & Polishing",
+  "Maxillofacial Surgery",
   "Dental Fillings",
   "Root Canal",
   "Teeth Whitening",
-  "Bonding",
+  "Orthodontics",
+  "Tooth Extraction",
+  "Dental Crowns",
+  "Veneers",
   "Dental Implants",
-  "Braces"
+  "Dentures",
+  "Clear Aligners",
+  "Gum Recontouring"
 ];
 
 export const STATUSES = ["Pending", "Qualified", "Not Qualified"];
