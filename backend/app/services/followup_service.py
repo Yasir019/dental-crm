@@ -14,11 +14,12 @@ ACTIVITY_SELECT = "id,lead_id,channel,mode,status,subject,body,provider_referenc
 
 
 def normalize_settings(row: dict):
+    callback_agent_id = settings.retell_callback_agent_id or settings.retell_agent_id
     return {
         "automaticEmailEnabled": bool(row.get("automatic_email_enabled")),
         "automaticCallbackEnabled": bool(row.get("automatic_callback_enabled")),
         "emailConfigured": bool(settings.n8n_email_webhook_url),
-        "callbackConfigured": bool(settings.retell_api_key and settings.retell_agent_id and settings.retell_phone_number),
+        "callbackConfigured": bool(settings.retell_api_key and callback_agent_id and settings.retell_phone_number),
         "workflowConfigured": bool(settings.n8n_email_webhook_url and settings.n8n_callback_webhook_url),
         "updatedAt": row.get("updated_at"),
     }
@@ -49,7 +50,8 @@ async def get_followup_settings():
 
 
 async def update_followup_settings(data: dict):
-    if data["automaticCallbackEnabled"] and not (settings.retell_api_key and settings.retell_agent_id and settings.retell_phone_number):
+    callback_agent_id = settings.retell_callback_agent_id or settings.retell_agent_id
+    if data["automaticCallbackEnabled"] and not (settings.retell_api_key and callback_agent_id and settings.retell_phone_number):
         raise HTTPException(status_code=400, detail={"message": "Configure Retell API key, agent, and phone number before enabling automatic callback."})
     if data["automaticEmailEnabled"] and not settings.n8n_email_webhook_url:
         raise HTTPException(status_code=400, detail={"message": "Configure N8N_EMAIL_WEBHOOK_URL before enabling automatic email."})

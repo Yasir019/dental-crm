@@ -81,16 +81,18 @@ async def create_retell_web_call():
 
 
 async def create_retell_phone_call(lead: dict):
-    if not settings.retell_api_key or not settings.retell_agent_id or not settings.retell_phone_number:
+    callback_agent_id = settings.retell_callback_agent_id or settings.retell_agent_id
+    if not settings.retell_api_key or not callback_agent_id or not settings.retell_phone_number:
         raise HTTPException(
             status_code=500,
-            detail={"message": "Retell callback is not configured. Add RETELL_API_KEY, RETELL_AGENT_ID, and RETELL_PHONE_NUMBER."},
+            detail={"message": "Retell callback is not configured. Add RETELL_API_KEY, RETELL_CALLBACK_AGENT_ID, and RETELL_PHONE_NUMBER."},
         )
 
     to_number = normalize_phone_e164(lead["phone"])
     payload = {
         "from_number": settings.retell_phone_number,
         "to_number": to_number,
+        "override_agent_id": callback_agent_id,
         "metadata": {
             "source": "crm_followup_callback",
             "lead_id": lead["id"],
@@ -102,6 +104,7 @@ async def create_retell_phone_call(lead: dict):
             "customer_email": lead["email"],
             "customer_phone": to_number,
             "dental_service": lead["service"],
+            "dental_clinic_name": settings.dental_clinic_name,
             "lead_id": lead["id"],
             "call_purpose": "appointment_booking_callback",
             "clinic_timezone": "Asia/Karachi",

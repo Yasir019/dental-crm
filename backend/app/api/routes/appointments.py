@@ -32,6 +32,14 @@ async def retell_book_appointment_handler(payload: RetellAppointmentCreate, x_in
     require_integration_key(x_integration_key)
     data = payload.model_dump()
     data["source"] = "AI Callback"
+    if data.pop("isEmergency", False):
+        emergency_summary = data.pop("emergencySummary", "").strip()
+        emergency_note = "URGENT DENTAL CONCERN"
+        if emergency_summary:
+            emergency_note += f": {emergency_summary}"
+        data["notes"] = " | ".join(part for part in [emergency_note, data.get("notes", "").strip()] if part)
+    else:
+        data.pop("emergencySummary", None)
     appointment = await create_appointment(data)
     return {
         "success": True,

@@ -28,6 +28,7 @@ class Settings:
     retell_agent_id: str | None = os.getenv("RETELL_AGENT_ID")
     retell_callback_agent_id: str | None = os.getenv("RETELL_CALLBACK_AGENT_ID")
     retell_phone_number: str | None = os.getenv("RETELL_PHONE_NUMBER")
+    dental_clinic_name: str = os.getenv("DENTAL_CLINIC_NAME", "Pearl Dental Studio")
 
 
 settings = Settings()

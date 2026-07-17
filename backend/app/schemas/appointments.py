@@ -23,3 +23,5 @@ class RetellAppointmentCreate(BaseModel):
     durationMinutes: int = Field(default=30, ge=15, le=120)
     notes: str = ""
     retellCallId: str = ""
+    isEmergency: bool = False
+    emergencySummary: str = ""
