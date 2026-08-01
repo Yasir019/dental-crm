@@ -80,8 +80,8 @@ export default function SettingsPage({ user, setUser, showToast }) {
           <h3 className="text-base font-bold text-gray-900">Automation</h3>
           <span className="text-xs font-semibold text-gray-400">{automationSaving ? "Saving..." : "Saved"}</span>
         </div>
-        <section className="settings-card rounded-2xl border border-emerald-100 bg-white p-5 shadow-soft md:p-6">
-          <div className="mx-auto grid max-w-6xl items-center gap-4 md:grid-cols-2">
+        <section className="settings-automation-grid">
+          <div className="grid w-full items-stretch gap-5 md:grid-cols-2">
           <AutomationToggle
             icon={Mail}
             title="AI Email"
