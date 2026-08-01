@@ -75,12 +75,13 @@ export default function SettingsPage({ user, setUser, showToast }) {
 
   return (
     <div className="settings-page grid gap-5 xl:grid-cols-2">
-      <section className="settings-card rounded-2xl border border-emerald-100 bg-white p-5 shadow-soft xl:col-span-2 md:p-6">
-        <div className="flex items-center justify-between gap-4">
+      <div className="settings-automation-section xl:col-span-2">
+        <div className="mb-3 flex items-center justify-between gap-4 px-1">
           <h3 className="text-base font-bold text-gray-900">Automation</h3>
           <span className="text-xs font-semibold text-gray-400">{automationSaving ? "Saving..." : "Saved"}</span>
         </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <section className="settings-card rounded-2xl border border-emerald-100 bg-white p-5 shadow-soft md:p-6">
+          <div className="mx-auto grid max-w-6xl items-center gap-4 md:grid-cols-2">
           <AutomationToggle
             icon={Mail}
             title="AI Email"
@@ -99,8 +100,9 @@ export default function SettingsPage({ user, setUser, showToast }) {
             disabled={automationLoading || automationSaving || !automation.callbackConfigured || !automation.workflowConfigured}
             onChange={(checked) => handleAutomationChange("automaticCallbackEnabled", checked)}
           />
-        </div>
-      </section>
+          </div>
+        </section>
+      </div>
       <form className="settings-card rounded-2xl border border-emerald-100 bg-white p-5 shadow-soft md:p-6" onSubmit={handleProfileSubmit}>
         <SettingsCardHeader icon={UserRound} title="Profile" />
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
