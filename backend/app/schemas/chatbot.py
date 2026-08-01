@@ -11,6 +11,7 @@ class ChatbotMessageRequest(BaseModel):
     message: str
     pageUrl: str | None = ""
     history: list[ChatMessage] = []
+    serviceCatalog: list[dict] = []
 
 
 class ChatbotLeadCreate(BaseModel):

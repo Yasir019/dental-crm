@@ -27,6 +27,7 @@ import LeadForm from "../components/LeadForm";
 import { chatbotService } from "../services/chatbotService";
 import { leadsService } from "../services/leadsService";
 import { voiceService } from "../services/voiceService";
+import { SERVICE_KNOWLEDGE } from "../utils/constants";
 
 const serviceCards = [
   {
@@ -278,7 +279,7 @@ export default function PublicLeadFormPage({ showToast }) {
     setVoiceStatus("Creating secure voice session...");
 
     try {
-      const response = await voiceService.createWebCall();
+      const response = await voiceService.createWebCall({ serviceCatalog: SERVICE_KNOWLEDGE });
       if (!response.accessToken) {
         throw new Error("Retell did not return a web call access token.");
       }
@@ -366,7 +367,8 @@ export default function PublicLeadFormPage({ showToast }) {
         sessionId: chatSessionId,
         message,
         pageUrl: window.location.href,
-        history: nextMessages.slice(-12)
+        history: nextMessages.slice(-12),
+        serviceCatalog: SERVICE_KNOWLEDGE
       });
 
       setChatMessages((current) => [...current, { role: "assistant", content: response.reply }]);

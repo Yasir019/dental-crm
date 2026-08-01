@@ -1,8 +1,10 @@
 import httpx
 from fastapi import HTTPException
 import re
+import json
 
 from app.core.config import settings
+from app.utils.service_catalog import SERVICE_CATALOG, service_catalog_text
 
 
 RETELL_CREATE_WEB_CALL_URL = "https://api.retellai.com/v2/create-web-call"
@@ -33,12 +35,19 @@ def normalize_phone_e164(phone: str, default_country_code: str = "92") -> str:
     return normalized
 
 
-async def create_retell_web_call():
+async def create_retell_web_call(service_catalog: list[dict] | None = None):
     if not settings.retell_api_key or not settings.retell_agent_id:
         raise HTTPException(
             status_code=500,
             detail={"message": "Retell web call is not configured. Add RETELL_API_KEY and RETELL_AGENT_ID."},
         )
+
+    catalog = service_catalog or SERVICE_CATALOG
+    catalog_text = "\n".join(
+        f"- {item.get('name')}: {item.get('description')}"
+        for item in catalog
+        if item.get("name") and item.get("description")
+    ) or service_catalog_text()
 
     payload = {
         "agent_id": settings.retell_agent_id,
@@ -46,6 +55,12 @@ async def create_retell_web_call():
         "metadata": {
             "source": "website_voice_button",
             "crm_source": "AI Voice Agent",
+        },
+        "retell_llm_dynamic_variables": {
+            "dental_clinic_name": settings.dental_clinic_name,
+            "clinic_timezone": "Asia/Karachi",
+            "clinic_hours": "Monday to Friday, 9:00 AM to 5:00 PM",
+            "service_catalog": catalog_text,
         },
     }
 
@@ -108,6 +123,7 @@ async def create_retell_phone_call(lead: dict):
             "call_purpose": "appointment_booking_callback",
             "clinic_timezone": "Asia/Karachi",
             "clinic_hours": "Monday to Friday, 9:00 AM to 5:00 PM",
+            "service_catalog": service_catalog_text(),
         },
     }
     headers = {

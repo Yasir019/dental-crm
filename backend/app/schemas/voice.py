@@ -21,6 +21,10 @@ class VoiceCallAnalysis(BaseModel):
     rawPayload: dict[str, Any] | None = None
 
 
+class WebCallRequest(BaseModel):
+    serviceCatalog: list[dict[str, str]] = []
+
+
 class VoiceLeadCreate(VoiceCallAnalysis):
     name: str
     phone: str

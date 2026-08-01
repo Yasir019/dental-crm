@@ -1,5 +1,5 @@
 import { api } from "./api";
 
 export const voiceService = {
-  createWebCall: () => api.post("/voice/web-call", {})
+  createWebCall: (payload = {}) => api.post("/voice/web-call", payload)
 };

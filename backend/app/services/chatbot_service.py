@@ -2,6 +2,7 @@ import httpx
 from fastapi import HTTPException
 
 from app.core.config import settings
+from app.utils.service_catalog import SERVICE_CATALOG
 
 async def send_chatbot_message(payload: dict):
     if not settings.n8n_chatbot_webhook_url:
@@ -10,6 +11,7 @@ async def send_chatbot_message(payload: dict):
             detail={"message": "AI chatbot workflow is not configured. Add N8N_CHATBOT_WEBHOOK_URL in backend/.env."},
         )
 
+    payload.setdefault("serviceCatalog", SERVICE_CATALOG)
     headers = {"Content-Type": "application/json"}
     if settings.n8n_chatbot_secret:
         headers["x-chatbot-secret"] = settings.n8n_chatbot_secret
