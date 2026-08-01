@@ -241,6 +241,32 @@ textarea {
   color: #087f5b !important;
 }
 
+.dashboard-page {
+  color: #171b18;
+}
+
+.dashboard-page .dashboard-metric-card {
+  border-color: #e2ebe0 !important;
+  border-top: 3px solid #baff98 !important;
+  box-shadow: 0 4px 14px rgba(45, 61, 48, 0.045) !important;
+}
+
+.dashboard-page .dashboard-metric-card p:first-child {
+  color: #68726b !important;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-page .dashboard-panel {
+  min-height: 360px;
+  border-color: #e2ebe0 !important;
+  box-shadow: 0 4px 14px rgba(45, 61, 48, 0.045) !important;
+}
+
+.dashboard-page .dashboard-panel h3 {
+  color: #171b18 !important;
+  letter-spacing: -0.035em;
+}
+
 .settings-page .settings-card {
   border-color: #e2ebe0 !important;
   box-shadow: 0 4px 14px rgba(45, 61, 48, 0.045) !important;

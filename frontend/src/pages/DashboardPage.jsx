@@ -31,7 +31,7 @@ export default function DashboardPage({ leads }) {
   })).filter((item) => item.value > 0);
 
   return (
-    <div className="space-y-6">
+    <div className="dashboard-page space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <DashboardCard label="Total Leads" value={metrics.total} icon={ClipboardList} />
         <DashboardCard label="Today Leads" value={metrics.today} icon={TrendingUp} tone="mint" />
@@ -44,15 +44,15 @@ export default function DashboardPage({ leads }) {
         <EmptyState title="No leads yet" message="New dental inquiries will populate dashboard analytics." />
       ) : (
         <div className="grid gap-6 xl:grid-cols-3">
-          <section className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft">
+          <section className="dashboard-panel rounded-lg border border-emerald-100 bg-white p-5 shadow-soft">
             <h3 className="text-lg font-bold text-gray-900">Leads by Service</h3>
             <ServicePieChart data={serviceData} />
           </section>
-          <section className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft">
+          <section className="dashboard-panel rounded-lg border border-emerald-100 bg-white p-5 shadow-soft">
             <h3 className="text-lg font-bold text-gray-900">Leads by Source</h3>
             <ServicePieChart data={sourceData} />
           </section>
-          <section className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft">
+          <section className="dashboard-panel rounded-lg border border-emerald-100 bg-white p-5 shadow-soft">
             <h3 className="text-lg font-bold text-gray-900">Qualification Overview</h3>
             <QualificationBarChart data={qualificationData} />
           </section>
