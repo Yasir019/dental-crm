@@ -22,7 +22,7 @@ export default function CrmLayout({ currentPage, onNavigate, children, user, onL
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen">
+    <div className="crm-shell min-h-screen">
       <Sidebar
         currentPage={currentPage}
         onNavigate={onNavigate}
@@ -32,8 +32,8 @@ export default function CrmLayout({ currentPage, onNavigate, children, user, onL
         setMobileOpen={setMobileOpen}
         onLogout={onLogout}
       />
-      <main className={`min-w-0 transition-all duration-300 ${collapsed ? "lg:ml-20" : "lg:ml-72"}`}>
-        <header className="sticky top-0 z-20 border-b border-emerald-100 bg-white/85 px-4 py-4 backdrop-blur md:px-8">
+      <main className={`crm-main min-w-0 transition-all duration-300 ${collapsed ? "lg:ml-20" : "lg:ml-64"}`}>
+        <header className="crm-topbar sticky top-0 z-20 border-b border-emerald-100 bg-white/85 px-5 py-5 backdrop-blur md:px-10">
           <div className="flex items-center gap-3">
             <button className="rounded-lg border border-emerald-100 bg-white p-2 text-emerald-700 lg:hidden" onClick={() => setMobileOpen(true)}>
               <Menu size={22} />
@@ -50,7 +50,7 @@ export default function CrmLayout({ currentPage, onNavigate, children, user, onL
             )}
           </div>
         </header>
-        <div className="p-4 md:p-8">{children}</div>
+        <div className="crm-page-content px-5 py-7 md:px-10 md:py-9">{children}</div>
       </main>
     </div>
   );
