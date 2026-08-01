@@ -231,6 +231,148 @@ textarea {
   color: #087f5b !important;
 }
 
+/* Shared Brevo-inspired language across CRM screens and the public clinic site. */
+.crm-main .font-serif,
+.public-site .font-serif {
+  font-family: inherit !important;
+  letter-spacing: -0.045em;
+}
+
+.crm-main .rounded-lg,
+.public-site .rounded-lg {
+  border-radius: 12px;
+}
+
+.crm-main .bg-gradient-to-r,
+.public-site .bg-gradient-to-r {
+  background-image: none !important;
+  background-color: #1d1f1c !important;
+}
+
+.crm-main .bg-gradient-to-r:hover,
+.public-site .bg-gradient-to-r:hover {
+  background-color: #343832 !important;
+}
+
+.crm-main .text-emerald-800,
+.crm-main .text-emerald-900,
+.public-site .text-emerald-800,
+.public-site .text-emerald-900 {
+  color: #087f5b !important;
+}
+
+.crm-main .text-emerald-600,
+.public-site .text-emerald-600 {
+  color: #0c956a !important;
+}
+
+.public-site {
+  background: #fbfcfa !important;
+  color: #171b18 !important;
+}
+
+.public-site h1,
+.public-site h2,
+.public-site h3 {
+  font-weight: 750;
+  letter-spacing: -0.055em;
+}
+
+.public-site #home {
+  background: #eaf8e5 !important;
+  color: #152019 !important;
+}
+
+.public-site #home .text-white,
+.public-site #home .text-emerald-50,
+.public-site #home .text-emerald-100 {
+  color: #263229 !important;
+}
+
+.public-site #home .bg-white {
+  background: #ffffff !important;
+  color: #171b18 !important;
+}
+
+.public-site #home .border-emerald-200\/80 {
+  border-color: #8ec879 !important;
+}
+
+.public-site #home > div {
+  max-width: 1260px;
+}
+
+.public-site section {
+  border-color: #e2ebe0 !important;
+}
+
+.public-site section#services,
+.public-site section#reviews {
+  background: #ffffff !important;
+}
+
+.public-site section#results {
+  background: #f2f8ef !important;
+}
+
+.public-site section article,
+.public-site section form,
+.public-site [role="dialog"] > div {
+  border-color: #e2ebe0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 16px rgba(45, 61, 48, 0.05) !important;
+}
+
+.public-site .bg-emerald-600,
+.public-site .bg-emerald-700 {
+  background-color: #1d1f1c !important;
+}
+
+.public-site .bg-emerald-600:hover,
+.public-site .bg-emerald-700:hover {
+  background-color: #343832 !important;
+}
+
+.public-site .bg-emerald-50 {
+  background-color: #eff8eb !important;
+}
+
+.public-site .border-emerald-100,
+.public-site .border-emerald-200 {
+  border-color: #dce9d7 !important;
+}
+
+.public-site .form-input {
+  border-color: #dce5d8;
+  border-radius: 10px;
+}
+
+.public-site .form-input:focus {
+  border-color: #72b65b;
+  box-shadow: 0 0 0 4px rgba(186, 255, 152, 0.35);
+}
+
+.auth-page {
+  background: #f1f8ee !important;
+}
+
+.auth-page > section {
+  border-color: #e0ebe0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 28px rgba(45, 61, 48, 0.07) !important;
+}
+
+.auth-page .bg-emerald-600,
+.auth-page .bg-gradient-to-r {
+  background-image: none !important;
+  background-color: #1d1f1c !important;
+}
+
+.auth-page .bg-emerald-600:hover,
+.auth-page .bg-gradient-to-r:hover {
+  background-color: #343832 !important;
+}
+
 @layer components {
   .form-input {
     @apply w-full rounded-lg border border-emerald-100 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-50;

@@ -22,7 +22,7 @@ export default function LoginPage({ onLogin, onBack, showToast }) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-white via-emerald-50 to-green-100 px-4 py-10">
+    <main className="auth-page flex min-h-screen items-center justify-center bg-gradient-to-br from-white via-emerald-50 to-green-100 px-4 py-10">
       <section className="w-full max-w-md rounded-lg border border-emerald-100 bg-white p-6 shadow-soft">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-600 text-white">

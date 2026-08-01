@@ -389,7 +389,7 @@ export default function PublicLeadFormPage({ showToast }) {
   }
 
   return (
-    <main className="min-h-screen bg-emerald-50 text-gray-900">
+    <main className="public-site min-h-screen bg-emerald-50 text-gray-900">
       <section id="home" className="bg-emerald-800 text-white">
         <div className="mx-auto grid max-w-7xl gap-12 px-4 py-14 md:px-8 md:py-20 lg:min-h-[610px] lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div className="relative z-10">
