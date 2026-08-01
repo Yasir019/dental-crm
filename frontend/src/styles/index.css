@@ -315,6 +315,17 @@ textarea {
   background: #f2f8ef !important;
 }
 
+.public-site footer {
+  background: #baff98 !important;
+  color: #152019 !important;
+}
+
+.public-site footer .text-white,
+.public-site footer .text-gray-300,
+.public-site footer .text-gray-400 {
+  color: #263229 !important;
+}
+
 .public-site section article,
 .public-site section form,
 .public-site [role="dialog"] > div {
