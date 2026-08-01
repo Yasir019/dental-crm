@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Archive, Bot, CalendarDays, ChevronLeft, ChevronRight, ClipboardList, FileText, GitBranch, Globe2, LayoutDashboard, LogOut, Menu, Mic, PhoneCall, Settings, X } from "lucide-react";
+import { Archive, Bot, CalendarDays, ChevronLeft, ChevronRight, ClipboardList, Diamond, FileText, GitBranch, Globe2, LayoutDashboard, LogOut, Menu, Mic, PhoneCall, Settings, TrendingUp, X } from "lucide-react";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -123,7 +123,27 @@ export default function Sidebar({ currentPage, onNavigate, collapsed, setCollaps
         })}
       </nav>
 
-      <div className="mt-auto px-3 pb-5">
+      <div className="mt-auto px-3 pb-4">
+        {!collapsed && (
+          <div className="crm-sidebar-promo relative mb-4 overflow-hidden rounded-2xl border border-emerald-100 bg-white/75 p-4">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                <Diamond size={18} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-gray-900">Grow your practice</p>
+                <p className="mt-1 text-xs leading-5 text-gray-500">Manage leads and convert more patients.</p>
+              </div>
+            </div>
+            <div className="crm-promo-chart mt-3 flex items-end justify-end gap-1.5 pr-1" aria-hidden="true">
+              <span className="h-2 w-2 rounded-full bg-emerald-300" />
+              <span className="h-4 w-2 rounded-full bg-emerald-400" />
+              <span className="h-3 w-2 rounded-full bg-emerald-300" />
+              <span className="h-6 w-2 rounded-full bg-emerald-500" />
+              <TrendingUp className="-ml-1 text-emerald-600" size={22} />
+            </div>
+          </div>
+        )}
         <button
           className="crm-nav-inactive flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold text-emerald-50 transition hover:bg-white/15"
           onClick={onLogout}
