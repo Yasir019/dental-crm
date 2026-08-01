@@ -110,7 +110,7 @@ textarea {
 }
 
 .crm-sidebar .crm-nav-active {
-  background: #baff98 !important;
+  background: #dff4d7 !important;
   color: #152019 !important;
   border-radius: 13px !important;
   box-shadow: none !important;
@@ -247,7 +247,7 @@ textarea {
 
 .dashboard-page .dashboard-metric-card {
   border-color: #e2ebe0 !important;
-  border-top: 3px solid #baff98 !important;
+  border-top: 3px solid #d0e8c9 !important;
   background: #ffffff !important;
   box-shadow: 0 4px 14px rgba(45, 61, 48, 0.045) !important;
 }
@@ -330,7 +330,7 @@ textarea {
 }
 
 .public-site #home {
-  background: #baff98 !important;
+  background: #dff4d7 !important;
   color: #152019 !important;
 }
 
@@ -367,7 +367,7 @@ textarea {
 }
 
 .public-site footer {
-  background: #baff98 !important;
+  background: #dff4d7 !important;
   color: #152019 !important;
 }
 

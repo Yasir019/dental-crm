@@ -1,6 +1,6 @@
 export default function DashboardCard({ label, value, icon: Icon, tone = "emerald" }) {
   const tones = {
-    emerald: "bg-[#BAFF98] text-[#16351d]",
+    emerald: "bg-[#eff9eb] text-[#087f5b]",
     mint: "bg-[#eff9eb] text-[#07835d]",
     amber: "bg-[#fff8df] text-[#9a6b00]",
     rose: "bg-[#fff0f1] text-[#c81e4b]"
