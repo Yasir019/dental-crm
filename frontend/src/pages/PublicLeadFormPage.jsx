@@ -27,6 +27,7 @@ import LeadForm from "../components/LeadForm";
 import { chatbotService } from "../services/chatbotService";
 import { leadsService } from "../services/leadsService";
 import { voiceService } from "../services/voiceService";
+import ConversationMessage, { parseConversationTranscript } from "../components/ConversationMessage";
 import { SERVICE_KNOWLEDGE } from "../utils/constants";
 
 const serviceCards = [
@@ -589,15 +590,20 @@ export default function PublicLeadFormPage({ showToast }) {
       {voiceOpen && (
         <FloatingPanel title="AI Voice Assistant" onClose={handleCloseVoicePanel}>
           <div className="space-y-3">
-            <div className="rounded-lg border border-emerald-100 bg-white p-4 shadow-sm">
+            <div className="rounded-xl border border-emerald-100 bg-white p-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${voiceCallActive ? "bg-emerald-500" : voiceConnecting ? "bg-amber-400" : "bg-gray-300"}`} />
-                <p className="text-sm font-semibold text-gray-800">{voiceStatus}</p>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{voiceCallActive ? "Live conversation" : voiceConnecting ? "Connecting" : "Voice assistant"}</p>
+                  <p className="text-sm font-semibold text-gray-800">{voiceStatus}</p>
+                </div>
               </div>
               {voiceError && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{voiceError}</p>}
               {voiceTranscript && (
-                <div className="mt-3 max-h-40 whitespace-pre-line overflow-y-auto rounded-lg bg-gray-50 p-3 text-sm leading-6 text-gray-600">
-                  {voiceTranscript}
+                <div className="mt-3 max-h-64 space-y-3 overflow-y-auto rounded-xl border border-gray-100 bg-gray-50 p-3">
+                  {parseConversationTranscript(voiceTranscript).map((message, index) => (
+                    <ConversationMessage key={`${message.role}-${index}`} {...message} compact />
+                  ))}
                 </div>
               )}
             </div>
@@ -624,16 +630,10 @@ export default function PublicLeadFormPage({ showToast }) {
           <form className="space-y-3" onSubmit={handleChatSubmit}>
             <div className="h-80 space-y-3 overflow-y-auto rounded-lg bg-gray-50 p-3">
               {chatMessages.map((message, index) => (
-                <div key={`${message.role}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm leading-6 ${message.role === "user" ? "bg-emerald-600 text-white" : "bg-white text-gray-700 shadow-sm"}`}>
-                    {message.content}
-                  </div>
-                </div>
+                <ConversationMessage key={`${message.role}-${index}`} role={message.role} content={message.content} compact />
               ))}
               {chatLoading && (
-                <div className="flex justify-start">
-                  <div className="rounded-lg bg-white px-3 py-2 text-sm text-gray-500 shadow-sm">Thinking...</div>
-                </div>
+                <ConversationMessage content="Thinking..." compact />
               )}
             </div>
 

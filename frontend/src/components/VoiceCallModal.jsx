@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { leadsService } from "../services/leadsService";
 import { formatDateTime } from "../utils/formatters";
 import LoadingSpinner from "./LoadingSpinner";
+import ConversationMessage, { parseConversationTranscript } from "./ConversationMessage";
 
 const tabs = ["Overview", "Transcript", "Webhook Data"];
 
@@ -36,10 +37,7 @@ export default function VoiceCallModal({ lead, callType = "lead_capture", callId
     };
   }, [callId, callType, lead.id, showToast]);
 
-  const transcriptLines = (voiceCall?.transcript || "")
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const transcriptLines = parseConversationTranscript(voiceCall?.transcript || "");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/55 p-4">
@@ -119,11 +117,7 @@ export default function VoiceCallModal({ lead, callType = "lead_capture", callId
                 <div className="mt-5 rounded-lg border border-gray-100 bg-gray-50 p-4">
                   {transcriptLines.length ? (
                     <div className="space-y-3">
-                      {transcriptLines.map((line, index) => (
-                        <p key={`${line}-${index}`} className="rounded-lg bg-white p-3 text-sm leading-6 text-gray-700 shadow-sm">
-                          {line}
-                        </p>
-                      ))}
+                      {transcriptLines.map((message, index) => <ConversationMessage key={`${message.role}-${index}`} {...message} compact />)}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">No transcript saved for this call.</p>
