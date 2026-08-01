@@ -4,6 +4,7 @@ import re
 import json
 
 from app.core.config import settings
+from app.ai.prompts import callback_system_prompt, voice_lead_system_prompt
 from app.utils.service_catalog import SERVICE_CATALOG, service_catalog_text
 
 
@@ -61,6 +62,7 @@ async def create_retell_web_call(service_catalog: list[dict] | None = None):
             "clinic_timezone": "Asia/Karachi",
             "clinic_hours": "Monday to Friday, 9:00 AM to 5:00 PM",
             "service_catalog": catalog_text,
+            "agent_system_context": voice_lead_system_prompt(),
         },
     }
 
@@ -124,6 +126,7 @@ async def create_retell_phone_call(lead: dict):
             "clinic_timezone": "Asia/Karachi",
             "clinic_hours": "Monday to Friday, 9:00 AM to 5:00 PM",
             "service_catalog": service_catalog_text(),
+            "agent_system_context": callback_system_prompt(),
         },
     }
     headers = {

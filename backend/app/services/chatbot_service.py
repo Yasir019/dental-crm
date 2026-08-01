@@ -2,6 +2,7 @@ import httpx
 from fastapi import HTTPException
 
 from app.core.config import settings
+from app.ai.prompts import chatbot_system_prompt
 from app.utils.service_catalog import SERVICE_CATALOG
 
 async def send_chatbot_message(payload: dict):
@@ -12,6 +13,9 @@ async def send_chatbot_message(payload: dict):
         )
 
     payload.setdefault("serviceCatalog", SERVICE_CATALOG)
+    payload.setdefault("knowledgeBase", SERVICE_CATALOG)
+    payload.setdefault("agentType", "website_chatbot")
+    payload.setdefault("systemPrompt", chatbot_system_prompt())
     headers = {"Content-Type": "application/json"}
     if settings.n8n_chatbot_secret:
         headers["x-chatbot-secret"] = settings.n8n_chatbot_secret
