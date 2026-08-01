@@ -232,6 +232,15 @@ textarea {
   color: #087f5b !important;
 }
 
+.settings-page .settings-card {
+  border-color: #e2ebe0 !important;
+  box-shadow: 0 4px 14px rgba(45, 61, 48, 0.045) !important;
+}
+
+.settings-page .settings-automation {
+  background: linear-gradient(135deg, #ffffff 35%, #f4fbf1 100%);
+}
+
 /* Shared Brevo-inspired language across CRM screens and the public clinic site. */
 .crm-main .font-serif,
 .public-site .font-serif {

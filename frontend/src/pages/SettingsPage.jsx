@@ -1,4 +1,4 @@
-import { Mail, PhoneCall } from "lucide-react";
+import { Check, LockKeyhole, Mail, PhoneCall, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { authService } from "../services/authService";
 import { followupService } from "../services/followupService";
@@ -74,15 +74,17 @@ export default function SettingsPage({ user, setUser, showToast }) {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-2">
-      <section className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft xl:col-span-2">
-        <h3 className="text-lg font-bold text-gray-900">Lead Follow-up Automation</h3>
-        <p className="mt-1 text-sm text-gray-500">Choose which actions run automatically after a new lead provides name, email, phone, and service.</p>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
+    <div className="settings-page grid gap-5 xl:grid-cols-2">
+      <section className="settings-card rounded-2xl border border-emerald-100 bg-white p-5 shadow-soft xl:col-span-2 md:p-6">
+        <div className="flex items-center justify-between gap-4">
+          <h3 className="text-base font-bold text-gray-900">Automation</h3>
+          <span className="text-xs font-semibold text-gray-400">{automationSaving ? "Saving..." : "Saved"}</span>
+        </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
           <AutomationToggle
             icon={Mail}
-            title="Automatic AI Email"
-            description="n8n creates a personalized email and sends it through the configured email provider."
+            title="AI Email"
+            description="Sends personalized emails automatically."
             checked={automation.automaticEmailEnabled}
             configured={automation.emailConfigured && automation.workflowConfigured}
             disabled={automationLoading || automationSaving || !automation.emailConfigured || !automation.workflowConfigured}
@@ -90,29 +92,22 @@ export default function SettingsPage({ user, setUser, showToast }) {
           />
           <AutomationToggle
             icon={PhoneCall}
-            title="Automatic AI Callback"
-            description="Retell AI calls the lead using their captured phone number and service context."
+            title="AI Callback"
+            description="Calls leads using their number and context."
             checked={automation.automaticCallbackEnabled}
             configured={automation.callbackConfigured && automation.workflowConfigured}
             disabled={automationLoading || automationSaving || !automation.callbackConfigured || !automation.workflowConfigured}
             onChange={(checked) => handleAutomationChange("automaticCallbackEnabled", checked)}
           />
         </div>
-        <div className="mt-5 flex items-center justify-between gap-4 border-t border-emerald-50 pt-5">
-          <p className="text-sm text-gray-500">Changes save automatically. Staff can still send either action manually from each lead page.</p>
-          <span className={`shrink-0 text-sm font-semibold ${automationSaving ? "text-amber-600" : "text-emerald-700"}`}>
-            {automationSaving ? "Saving..." : "Saved automatically"}
-          </span>
-        </div>
       </section>
-      <form className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft" onSubmit={handleProfileSubmit}>
-        <h3 className="text-lg font-bold text-gray-900">Profile Settings</h3>
-        <p className="mt-1 text-sm text-gray-500">Update clinic and staff profile details.</p>
-        <div className="mt-5 grid gap-4">
+      <form className="settings-card rounded-2xl border border-emerald-100 bg-white p-5 shadow-soft md:p-6" onSubmit={handleProfileSubmit}>
+        <SettingsCardHeader icon={UserRound} title="Profile" />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field label="Display Name">
             <input className="form-input" value={profile.displayName} onChange={(event) => setProfile((current) => ({ ...current, displayName: event.target.value }))} />
           </Field>
-          <Field label="Clinic Name">
+          <Field label="Clinic Name" wide>
             <input className="form-input" value={profile.clinicName} onChange={(event) => setProfile((current) => ({ ...current, clinicName: event.target.value }))} />
           </Field>
           <Field label="Email">
@@ -122,15 +117,15 @@ export default function SettingsPage({ user, setUser, showToast }) {
             <input className="form-input" value={profile.phone} onChange={(event) => setProfile((current) => ({ ...current, phone: event.target.value }))} />
           </Field>
         </div>
-        <button className="mt-5 rounded-lg bg-emerald-600 px-4 py-2.5 font-bold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={profileLoading}>
+        <button className="mt-6 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={profileLoading}>
+          <Check size={16} />
           {profileLoading ? "Saving..." : "Save Profile"}
         </button>
       </form>
 
-      <form className="rounded-lg border border-emerald-100 bg-white p-5 shadow-soft" onSubmit={handlePasswordSubmit}>
-        <h3 className="text-lg font-bold text-gray-900">Change Password</h3>
-        <p className="mt-1 text-sm text-gray-500">Update the CRM login password.</p>
-        <div className="mt-5 grid gap-4">
+      <form className="settings-card rounded-2xl border border-emerald-100 bg-white p-5 shadow-soft md:p-6" onSubmit={handlePasswordSubmit}>
+        <SettingsCardHeader icon={LockKeyhole} title="Security" />
+        <div className="mt-6 grid gap-4">
           <Field label="Current Password">
             <input className="form-input" type="password" value={passwords.currentPassword} onChange={(event) => setPasswords((current) => ({ ...current, currentPassword: event.target.value }))} />
           </Field>
@@ -138,7 +133,8 @@ export default function SettingsPage({ user, setUser, showToast }) {
             <input className="form-input" type="password" value={passwords.newPassword} onChange={(event) => setPasswords((current) => ({ ...current, newPassword: event.target.value }))} />
           </Field>
         </div>
-        <button className="mt-5 rounded-lg bg-emerald-600 px-4 py-2.5 font-bold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={passwordLoading}>
+        <button className="mt-6 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={passwordLoading}>
+          <Check size={16} />
           {passwordLoading ? "Updating..." : "Update Password"}
         </button>
       </form>
@@ -146,15 +142,24 @@ export default function SettingsPage({ user, setUser, showToast }) {
   );
 }
 
+function SettingsCardHeader({ icon: Icon, title }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Icon size={18} /></span>
+      <h3 className="text-base font-bold text-gray-900">{title}</h3>
+    </div>
+  );
+}
+
 function AutomationToggle({ icon: Icon, title, description, checked, configured, disabled, onChange }) {
   return (
-    <label className="flex cursor-pointer items-start gap-4 rounded-lg border border-emerald-100 p-4 hover:bg-emerald-50/50">
-      <span className="rounded-lg bg-emerald-50 p-2 text-emerald-700"><Icon size={20} /></span>
+    <label className="settings-automation flex cursor-pointer items-center gap-4 rounded-2xl border border-emerald-100 p-5 hover:bg-emerald-50/50">
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 shadow-sm"><Icon size={27} strokeWidth={1.8} /></span>
       <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2 font-bold text-gray-900">{title}<span className={`rounded-full px-2 py-0.5 text-xs ${configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{configured ? "Ready" : "Not configured"}</span></span>
-        <span className="mt-1 block text-sm leading-6 text-gray-500">{description}</span>
+        <span className="flex flex-wrap items-center gap-2 text-sm font-bold text-gray-900">{title}<span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}><span className="mr-1">•</span>{configured ? "Active" : "Setup required"}</span></span>
+        <span className="mt-1 block text-xs text-gray-500">{description}</span>
       </span>
-      <span className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition ${checked ? "bg-emerald-600" : "bg-gray-200"}`}>
+      <span className={`relative h-6 w-11 shrink-0 rounded-full transition ${checked ? "bg-emerald-600" : "bg-gray-200"}`}>
         <input className="sr-only" type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} />
         <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition ${checked ? "left-6" : "left-1"}`} />
       </span>
@@ -162,10 +167,10 @@ function AutomationToggle({ icon: Icon, title, description, checked, configured,
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, children, wide = false }) {
   return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-gray-700">{label}</span>
+    <label className={`block ${wide ? "sm:col-span-2" : ""}`}>
+      <span className="mb-2 block text-xs font-semibold text-gray-600">{label}</span>
       {children}
     </label>
   );
