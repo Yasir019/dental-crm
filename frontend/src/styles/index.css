@@ -34,16 +34,17 @@ textarea {
 }
 
 .crm-shell {
-  background: #fbfcfa;
+  background: #ffffff;
 }
 
 .crm-main {
-  background: #fbfcfa;
+  background: #ffffff;
 }
 
 .crm-page-content {
   max-width: 1680px;
   margin: 0 auto;
+  background: #ffffff;
 }
 
 .crm-topbar {
