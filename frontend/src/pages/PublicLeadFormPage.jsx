@@ -237,7 +237,7 @@ export default function PublicLeadFormPage({ showToast }) {
       callActiveRef.current = false;
       setVoiceConnecting(false);
       setVoiceCallActive(false);
-      setVoiceStatus("Call ended. If you shared your email, the clinic team will follow up soon.");
+      setVoiceStatus("Call ended");
     });
 
     client.on("agent_start_talking", () => {
@@ -589,8 +589,7 @@ export default function PublicLeadFormPage({ showToast }) {
 
       {voiceOpen && (
         <FloatingPanel title="AI Voice Assistant" onClose={handleCloseVoicePanel}>
-          <div className="space-y-3">
-            <div className="rounded-xl border border-emerald-100 bg-white p-4 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
               <div className="flex items-center gap-3">
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${voiceCallActive ? "bg-emerald-500" : voiceConnecting ? "bg-amber-400" : "bg-gray-300"}`} />
                 <div>
@@ -600,21 +599,20 @@ export default function PublicLeadFormPage({ showToast }) {
               </div>
               {voiceError && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{voiceError}</p>}
               {voiceTranscript && (
-                <div className="mt-3 max-h-64 space-y-3 overflow-y-auto rounded-xl border border-gray-100 bg-gray-50 p-3">
+                <div className="mt-4 max-h-64 space-y-4 overflow-y-auto border-t border-gray-200 pt-4">
                   {parseConversationTranscript(voiceTranscript).map((message, index) => (
-                    <ConversationMessage key={`${message.role}-${index}`} {...message} compact />
+                    <ConversationMessage key={`${message.role}-${index}`} {...message} flat />
                   ))}
                 </div>
               )}
-            </div>
 
             {voiceCallActive ? (
-              <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 font-bold text-white hover:bg-red-700" onClick={handleStopVoiceCall}>
+              <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 font-bold text-white hover:bg-red-700" onClick={handleStopVoiceCall}>
                 End Call <Phone size={18} />
               </button>
             ) : (
               <button
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={handleStartVoiceCall}
                 disabled={voiceConnecting}
               >

@@ -70,8 +70,24 @@ export function renderContactHighlights(text) {
   return fragments;
 }
 
-export default function ConversationMessage({ role = "assistant", content, compact = false }) {
+export default function ConversationMessage({ role = "assistant", content, compact = false, flat = false }) {
   const isUser = role === "user";
+  if (flat) {
+    return (
+      <div className={`flex items-start gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}>
+        <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isUser ? "bg-emerald-100 text-emerald-700" : "bg-gray-900 text-white"}`}>
+          {isUser ? <UserRound size={12} /> : <Bot size={12} />}
+        </div>
+        <div className={`min-w-0 max-w-[88%] ${isUser ? "text-right" : "text-left"}`}>
+          <p className={`mb-0.5 text-[10px] font-bold uppercase tracking-wide ${isUser ? "text-emerald-700" : "text-gray-500"}`}>
+            {isUser ? "You" : "AI Receptionist"}
+          </p>
+          <p className="text-sm leading-6 text-gray-700">{renderContactHighlights(content)}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div className={`flex max-w-[88%] items-end gap-2 ${isUser ? "flex-row-reverse" : ""}`}>
