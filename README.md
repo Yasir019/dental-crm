@@ -1,99 +1,91 @@
-# AI-Powered Dental Lead CRM
+# DentalLead CRM
 
-A production-ready dental lead management system that captures inquiries from a website form, Google Forms, an AI chatbot, and a Retell AI voice agent. The CRM centralizes every lead, automates email and callback follow-ups, stores call intelligence, and books confirmed appointments on a clinic calendar.
+> An AI-powered lead capture and follow-up platform for modern dental clinics.
 
-## Live Application
+DentalLead CRM brings website forms, Google Forms, AI chat, and AI voice into one operational workspace. Staff can qualify leads, send personalized follow-ups, call patients with Retell AI, review call intelligence, and manage confirmed appointments from a single CRM.
 
-- Website: [dental-crm-lovat.vercel.app](https://dental-crm-lovat.vercel.app/)
-- Staff login: [dental-crm-lovat.vercel.app/stafflogin](https://dental-crm-lovat.vercel.app/stafflogin)
-- Backend API: [dental-crm-neg8.onrender.com](https://dental-crm-neg8.onrender.com/)
-- API documentation: [dental-crm-neg8.onrender.com/docs](https://dental-crm-neg8.onrender.com/docs)
+## Contents
 
-## Product Overview
+- [Project Introduction](#project-introduction)
+- [Product Mockup](#product-mockup)
+- [Features](#features)
+- [System Flow](#system-flow)
+- [Technology Stack](#technology-stack)
+- [Folder Structure](#folder-structure)
+- [How to Run Locally](#how-to-run-locally)
+- [Production Deployment](#production-deployment)
+- [Security](#security)
 
-### Patient Website
+## Project Introduction
 
-The responsive public website presents clinic services, treatment examples, patient reviews, and a centered consultation form. Patients can also submit their information through the floating AI chatbot or browser-based Retell voice assistant.
+DentalLead CRM is a full-stack dental lead-management system designed around a simple clinic workflow:
 
-![BrightSmile Dental Center landing page](docs/screenshots/landing-page.png)
+1. A patient submits information through a website form, Google Form, AI chatbot, or AI voice assistant.
+2. The backend stores the lead in Supabase and displays it in the CRM.
+3. n8n orchestrates AI, email, voice, and callback automations.
+4. Staff can review the lead, send follow-ups, schedule an appointment, and monitor the outcome.
 
-### CRM Dashboard
+The platform uses separate AI experiences for website lead capture and outbound appointment follow-up. This keeps each conversation focused and prevents appointment calls from creating duplicate leads.
 
-Staff can monitor total leads, daily inquiries, qualification status, lead sources, and requested services from one dashboard.
+## Product Mockup
 
-![Dental CRM dashboard](docs/screenshots/crm-dashboard.png)
+![DentalLead CRM product mockup](Mockup.png)
 
-### Lead Management
+## Features
 
-Leads are separated by source: Website Form, Google Form, AI Chatbot, and AI Voice. Staff can search, filter, update, archive, restore, or permanently delete a lead.
+### Lead Capture
 
-![Dental CRM lead management](docs/screenshots/leads-management.png)
+- Website consultation form
+- Google Form integration
+- AI chatbot with sequential data collection
+- Browser-based Retell AI voice lead capture
+- Required contact data validation before CRM creation
+- Source-specific lead views for Website Form, Google Form, AI Chatbot, and AI Voice
 
-### AI Chatbot
+### CRM Operations
 
-The website chatbot answers general clinic questions and collects lead data sequentially: service, name, email, and phone. A lead is created only after the required information is complete.
+- Dashboard metrics for total, daily, qualified, and voice leads
+- Search and filter by service, status, date, and source
+- Manual lead creation and editing
+- Qualification and follow-up status updates
+- Lead archive, restore, and permanent deletion
+- Persistent CRM authentication and profile settings
+- Mobile-responsive workspace with collapsible navigation
 
-![Website AI dental chatbot](docs/screenshots/chatbot.png)
+### AI Follow-up
 
-### AI Voice Agent
-
-Patients can start a browser voice call with the dedicated Retell lead-capture agent. The agent discusses the requested service and collects the caller's contact details before n8n saves the lead to the CRM.
-
-![Website AI dental voice agent](docs/screenshots/voice-agent.png)
-
-### Appointment Calendar
-
-The outbound follow-up agent can confirm an available weekday appointment between clinic hours. Confirmed bookings appear in the CRM calendar and remain linked to the existing lead.
-
-![Dental appointment calendar](docs/screenshots/appointment-calendar.png)
-
-### Follow-up Automation Settings
-
-Automatic email and AI callback workflows can be enabled independently. Staff can still trigger either action manually from an individual lead page.
-
-![Email and callback automation settings](docs/screenshots/automation-settings.png)
-
-### Call Intelligence
-
-Post-call analysis is attached to the correct existing lead. Staff can review call status, duration, summary, recording, transcript, sentiment, and raw webhook data.
-
-![Follow-up call overview and recording](docs/screenshots/followup-call-overview.png)
-
-![Follow-up call transcript](docs/screenshots/followup-call-transcript.png)
-
-## Core Features
-
-- Responsive clinic website and consultation form
-- Lead capture from Website Form, Google Form, AI Chatbot, and AI Voice
-- Authenticated CRM with persistent login session
-- Source-specific lead pages, search, date, service, and status filters
-- Manual lead entry, editing, qualification, archive, restore, and permanent deletion
-- Automatic and manual Gmail follow-up through n8n
-- Automatic and manual Retell AI callbacks
+- Automatic or manual Gmail follow-up
+- Automatic or manual Retell AI callback
 - Separate inbound lead-capture and outbound appointment agents
-- Appointment availability validation for Monday-Friday clinic hours
-- Calendar scheduling linked to existing leads
-- Voice recording, transcript, summary, sentiment, and webhook inspection
-- Chat transcript storage per lead
-- Dashboard analytics and source/service charts
-- Supabase Postgres persistence
+- Appointment availability rules for Monday-Friday, 9 AM-5 PM
+- Weekend and out-of-hours handling
+- Confirmed appointment calendar linked to the existing lead
 
-## System Architecture
+### Conversation Intelligence
+
+- AI and user conversation transcript
+- Voice call recording playback
+- Call summary, sentiment, status, and duration
+- Raw Retell webhook inspection
+- Chat transcript storage per session and lead
+- Contact details highlighted in chatbot and voice conversations
+
+## System Flow
 
 ```mermaid
 flowchart LR
-    Visitor[Patient] --> Website[React Website]
-    Visitor --> Google[Google Form]
-    Visitor --> Voice[Retell Voice Agent]
+    Patient[Patient] --> Website[React Website]
+    Patient --> Google[Google Form]
+    Patient --> Voice[Retell Voice Agent]
 
     Website --> Form[Website Form]
     Website --> Chat[AI Chatbot]
-    Website --> WebCall[Browser Voice Call]
+    Website --> WebVoice[Browser Voice Call]
 
     Form --> API[FastAPI Backend]
     Google --> API
     Chat --> N8N[n8n Dental-CRM Workflow]
-    WebCall --> Voice
+    WebVoice --> Voice
     Voice --> N8N
     N8N --> API
 
@@ -104,130 +96,125 @@ flowchart LR
     Email --> N8N
     Callback --> N8N
     N8N --> Gmail[Gmail]
-    N8N --> RetellCallback[Retell Callback Agent]
-    RetellCallback --> Calendar[Appointment Calendar]
+    N8N --> Retell[Retell Callback Agent]
+    Retell --> Calendar[Appointment Calendar]
     Calendar --> DB
 ```
 
 ## n8n Automation
 
-All automation branches live inside the existing **Dental-CRM** n8n workflow. Each branch has its own production webhook and does not interfere with the other branches.
+All automations belong to the **Dental-CRM** workflow in n8n. The workflow contains separate branches for each responsibility:
 
-### Website Chatbot Lead Capture
+| Branch | Responsibility |
+| --- | --- |
+| Chatbot lead capture | Answers dental questions and captures complete leads sequentially |
+| Retell voice analysis | Saves inbound voice leads and outbound call intelligence |
+| Email follow-up | Generates and sends Gmail follow-up messages |
+| Appointment callback | Starts the Retell appointment agent for an existing lead |
 
-1. Receives the website message and session ID.
-2. Normalizes conversation history and clinic context.
-3. Sends the request to the Dental Lead Agent using the GroqCloud model.
-4. Maintains sequential conversation memory.
-5. Checks whether name, email, phone, and service are complete.
-6. Creates a CRM lead only when all required fields are available.
-7. Returns a conversational reply to the website.
+### Chatbot Lead Capture
 
-![n8n website chatbot workflow](docs/screenshots/n8n-chatbot-workflow.png)
+The chatbot receives a session message, keeps conversation context, uses the GroqCloud model through the AI Agent node, and asks for missing fields one at a time. The lead is sent to the CRM only after the required name, email, phone, and service data is complete.
 
-### Retell Voice Call Analysis
+![n8n chatbot lead capture workflow](docs/screenshots/n8n-chatbot-workflow.png)
 
-The voice-analysis branch handles two call types:
+### Voice Analysis and Lead Save
 
-- **Inbound lead capture:** extracts contact details and creates a new AI Voice lead when the required email is available.
-- **Outbound follow-up:** saves summary, recording, transcript, sentiment, and webhook data against the existing lead without creating a duplicate.
+Retell sends post-call analysis to n8n. Inbound calls can create a new lead when the required email is available. Outbound follow-up calls update the original lead with call data and never create a duplicate appointment lead.
 
-![n8n Retell voice analysis workflow](docs/screenshots/n8n-voice-workflow.png)
+![n8n Retell voice workflow](docs/screenshots/n8n-voice-workflow.png)
 
 ### Email Follow-up
 
-The email branch receives a manual or automatic request. When content is missing, the AI email agent drafts a concise non-diagnostic follow-up. Gmail sends the message, and n8n records success or failure in the CRM activity history.
+The email branch accepts automatic and manual requests, prepares a concise clinic follow-up message, sends it through the connected Gmail credential, and records delivery or failure in the CRM.
 
-![n8n Gmail follow-up workflow](docs/screenshots/n8n-email-workflow.png)
+![n8n email follow-up workflow](docs/screenshots/n8n-email-workflow.png)
 
 ### Appointment Callback
 
-The callback branch receives an existing lead ID, name, phone, service, and execution mode. It asks the backend to initiate the dedicated Retell appointment agent. The resulting call analysis returns through the voice-analysis branch and is saved to the same lead.
+The callback branch receives an existing lead ID, starts the outbound Retell appointment agent, and routes the resulting analysis back to the original lead and appointment calendar.
 
 ![n8n appointment callback workflow](docs/screenshots/n8n-callback-workflow.png)
 
-## Retell AI Agents
-
-The system uses separate agents so lead capture and appointment follow-up remain independent.
-
-### Website Lead-Capture Agent
-
-- Starts when a visitor clicks **Start Voice Call** on the website.
-- Answers general dental-service questions.
-- Collects name, email, phone, and service.
-- Ends the call after confirming the captured information.
-- Sends post-call analysis to n8n for CRM lead creation.
-
-### Appointment Follow-up Agent
-
-- Calls an existing lead using the captured phone number and service context.
-- Confirms that the patient is still interested.
-- Offers appointment booking from Monday to Friday during clinic hours.
-- Rejects weekends and unavailable times politely.
-- Confirms the selected date and time once before booking.
-- Thanks the patient, states the confirmed appointment, and ends the call.
-- Sends recording, transcript, summary, and booking analysis back to the CRM.
-
 ## Technology Stack
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | React 18, Vite, Tailwind CSS |
-| UI and charts | Lucide React, Recharts |
-| Backend | Python, FastAPI, Uvicorn |
-| Database | Supabase Postgres |
-| Automation | n8n Cloud |
-| AI inference | GroqCloud OpenAI-compatible model |
-| Voice AI | Retell AI |
-| Telephony | Twilio |
-| Email | Gmail through n8n |
-| Frontend hosting | Vercel |
-| Backend hosting | Render |
+<p>
+  <a href="https://react.dev/"><img src="https://cdn.simpleicons.org/react/61DAFB" alt="React" height="32"></a>&nbsp;
+  <a href="https://vitejs.dev/"><img src="https://cdn.simpleicons.org/vite/646CFF" alt="Vite" height="32"></a>&nbsp;
+  <a href="https://tailwindcss.com/"><img src="https://cdn.simpleicons.org/tailwindcss/06B6D4" alt="Tailwind CSS" height="32"></a>&nbsp;
+  <a href="https://fastapi.tiangolo.com/"><img src="https://cdn.simpleicons.org/fastapi/009688" alt="FastAPI" height="32"></a>&nbsp;
+  <a href="https://supabase.com/"><img src="https://cdn.simpleicons.org/supabase/3ECF8E" alt="Supabase" height="32"></a>&nbsp;
+  <a href="https://n8n.io/"><img src="https://cdn.simpleicons.org/n8n/EA4B71" alt="n8n" height="32"></a>&nbsp;
+  <a href="https://www.twilio.com/"><img src="https://cdn.simpleicons.org/twilio/F22F46" alt="Twilio" height="32"></a>&nbsp;
+  <a href="https://vercel.com/"><img src="https://cdn.simpleicons.org/vercel/000000" alt="Vercel" height="32"></a>&nbsp;
+  <a href="https://render.com/"><img src="https://cdn.simpleicons.org/render/46E3B7" alt="Render" height="32"></a>
+</p>
 
-## Project Structure
+| Layer | Technology | Role |
+| --- | --- | --- |
+| Frontend | React, Vite, Tailwind CSS | Public clinic website and authenticated CRM |
+| UI | Lucide React, Recharts | Icons, charts, and responsive interface |
+| Backend | Python, FastAPI, Uvicorn | API, auth, lead operations, integrations |
+| Database | Supabase Postgres | Leads, conversations, calls, appointments, settings |
+| AI automation | n8n Cloud, GroqCloud | Workflow orchestration and AI agent inference |
+| Voice | Retell AI, Twilio | Browser voice, outbound calls, recording, analysis |
+| Email | Gmail through n8n | Manual and automatic follow-up messages |
+| Hosting | Vercel, Render | Frontend and backend deployment |
+
+## Folder Structure
 
 ```text
 dental-crm/
-|-- backend/
-|   |-- app/
-|   |   |-- api/routes/
-|   |   |-- core/
-|   |   |-- db/
-|   |   |-- schemas/
-|   |   `-- services/
-|   |-- main.py
-|   `-- requirements.txt
-|-- frontend/
-|   |-- public/
-|   `-- src/
-|       |-- components/
-|       |-- layouts/
-|       |-- pages/
-|       `-- services/
-|-- supabase/
-|   |-- full-schema.sql
-|   `-- migrations/
-|-- docs/screenshots/
-|-- .env.example
-`-- README.md
+├── backend/
+│   ├── app/
+│   │   ├── ai/                 # AI-related backend helpers
+│   │   ├── api/routes/         # FastAPI route modules
+│   │   ├── core/               # Configuration and shared settings
+│   │   ├── db/                 # Database clients and persistence helpers
+│   │   ├── schemas/            # Pydantic request and response schemas
+│   │   ├── services/           # Lead, auth, voice, chatbot, and follow-up logic
+│   │   └── utils/              # Shared backend utilities
+│   ├── main.py                 # FastAPI application entry point
+│   └── requirements.txt        # Python dependencies
+├── frontend/
+│   ├── public/images/          # Website treatment and hero media
+│   └── src/
+│       ├── components/         # Reusable UI and conversation components
+│       ├── layouts/             # CRM shell and navigation layouts
+│       ├── pages/               # Public, auth, CRM, calendar, and settings pages
+│       ├── services/            # API and integration clients
+│       ├── styles/              # Global styles and Tailwind entry points
+│       └── utils/               # Constants and frontend helpers
+├── supabase/
+│   ├── full-schema.sql         # Complete database schema
+│   └── migrations/             # Incremental SQL migrations
+├── docs/screenshots/           # n8n workflow visuals used in this README
+├── .env.example                # Environment variable template
+├── Requirement.md               # Product requirements and planned scope
+└── README.md
 ```
 
-## Local Setup
+## How to Run Locally
 
-### 1. Clone the repository
+### Prerequisites
+
+- Python 3.11+
+- Node.js 18+
+- npm
+- A Supabase project
+- Optional for full integrations: n8n, GroqCloud, Retell, Twilio, and Gmail credentials
+
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/Yasir019/dental-crm.git
 cd dental-crm
+npm run install:all
 ```
 
-### 2. Create the Supabase schema
+### 2. Configure the backend
 
-Create a Supabase project and execute `supabase/full-schema.sql` in the Supabase SQL Editor. Existing installations can apply the relevant files from `supabase/migrations/`.
-
-### 3. Configure environment variables
-
-Copy `.env.example` to `backend/.env` and provide your own credentials:
+Copy `.env.example` to `backend/.env` and provide your own values. Never commit `backend/.env`.
 
 ```env
 SUPABASE_URL=
@@ -240,6 +227,7 @@ AI_API_KEY=
 
 N8N_CHATBOT_WEBHOOK_URL=
 N8N_VOICE_WEBHOOK_URL=
+N8N_FOLLOWUP_WEBHOOK_URL=
 N8N_EMAIL_WEBHOOK_URL=
 N8N_CALLBACK_WEBHOOK_URL=
 N8N_CHATBOT_SECRET=
@@ -258,69 +246,67 @@ FRONTEND_URL=http://localhost:5173
 CORS_ORIGIN_REGEX=^http://(localhost|127\.0\.0\.1):[0-9]+$
 ```
 
-Never expose `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SECRET`, Retell, Twilio, n8n, or integration credentials in frontend code or commits.
+### 3. Create the database
 
-### 4. Run the FastAPI backend
+Run `supabase/full-schema.sql` in the Supabase SQL Editor. The migration files in `supabase/migrations/` contain incremental changes for existing installations.
 
-```bash
-cd backend
-python -m pip install -r requirements.txt
-python main.py
-```
+### 4. Start both applications
 
-The API runs at `http://127.0.0.1:5000`, with Swagger documentation at `http://127.0.0.1:5000/docs`.
-
-### 5. Run the React frontend
+From the repository root:
 
 ```bash
-cd frontend
-npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+The services will be available at:
+
+- Website and CRM: `http://localhost:5173`
+- FastAPI: `http://127.0.0.1:5000`
+- Swagger API docs: `http://127.0.0.1:5000/docs`
+
+To run them separately:
+
+```bash
+# Backend
+cd backend
+python -m uvicorn main:app --host 127.0.0.1 --port 5000 --reload
+
+# Frontend, in a second terminal
+cd frontend
+npm run dev
+```
 
 ## Production Deployment
 
-### Frontend on Vercel
+### Vercel
 
-- Root directory: `frontend`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Environment variable: `VITE_API_BASE_URL=https://dental-crm-neg8.onrender.com/api`
+- Import the GitHub repository.
+- Set the root directory to `frontend`.
+- Build command: `npm run build`.
+- Output directory: `dist`.
+- Add `VITE_API_BASE_URL=https://<your-render-service>/api`.
 
-### Backend on Render
+### Render
 
-- Root directory: `backend`
-- Runtime: Python
-- Build command: `pip install -r requirements.txt`
-- Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-- Add all backend-only credentials from `.env.example` in the Render environment settings.
+- Create a Python web service from the same repository.
+- Set the root directory to `backend`.
+- Build command: `pip install -r requirements.txt`.
+- Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`.
+- Add the backend variables from `.env.example` in Render Environment settings.
 
-### External webhook URLs
+### Integrations
 
-Production Google Apps Script, n8n, and Retell webhooks must use the deployed Render URL rather than localhost or ngrok.
+Production n8n, Google Apps Script, and Retell callbacks must point to the deployed Render API URL. Do not use localhost or ngrok URLs in production.
 
-## Security Notes
+## Security
 
-- Backend secrets are excluded from Git through `.gitignore`.
-- Supabase service-role access is backend-only.
-- CRM routes require authentication.
-- Integration endpoints require the private integration key.
-- Public chatbot traffic is proxied through FastAPI.
-- Screenshots and demo recordings should hide real patient contact information and credentials.
-- Upgrade Twilio from trial mode before calling unverified customer numbers.
+- Keep Supabase service-role, auth, Twilio, Retell, n8n, and AI credentials server-side.
+- Never place secrets in frontend source code or commit them to Git.
+- Protect CRM routes with authentication.
+- Protect integration endpoints with a private integration key.
+- Redact patient contact details from public demos and screenshots.
+- Upgrade Twilio from trial mode before calling unverified numbers.
 
-## Future Improvements
+## License and Disclaimer
 
-- Multi-tenant clinic accounts and role-based staff permissions
-- Per-clinic Retell, Twilio, Gmail, and n8n configuration
-- Calendar synchronization with Google Calendar or Outlook
-- SMS appointment reminders and missed-call recovery
-- Advanced lead scoring and conversion analytics
-- Audit logs, consent tracking, and configurable retention policies
-- Production observability and workflow retry dashboards
-
-## Disclaimer
-
-This project is a dental lead-management and appointment-coordination system. It does not provide medical diagnosis or replace professional clinical advice.
+This project is a private dental lead-management system. It supports administrative lead capture and appointment coordination; it does not provide medical diagnosis or replace professional clinical advice.
