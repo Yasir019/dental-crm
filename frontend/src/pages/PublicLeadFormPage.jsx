@@ -9,7 +9,9 @@ import {
   Crown,
   HeartHandshake,
   HeartPulse,
+  Maximize2,
   Mic,
+  Minimize2,
   Phone,
   ScanFace,
   ShieldPlus,
@@ -589,7 +591,7 @@ export default function PublicLeadFormPage({ showToast }) {
 
       {voiceOpen && (
         <FloatingPanel title="AI Voice Assistant" onClose={handleCloseVoicePanel}>
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <div className="flex h-full min-h-0 flex-col rounded-xl border border-gray-200 bg-gray-50 p-4">
               <div className="flex items-center gap-3">
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${voiceCallActive ? "bg-emerald-500" : voiceConnecting ? "bg-amber-400" : "bg-gray-300"}`} />
                 <div>
@@ -599,7 +601,7 @@ export default function PublicLeadFormPage({ showToast }) {
               </div>
               {voiceError && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{voiceError}</p>}
               {voiceTranscript && (
-                <div className="mt-4 max-h-64 space-y-4 overflow-y-auto border-t border-gray-200 pt-4">
+                <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto border-t border-gray-200 pt-4">
                   {parseConversationTranscript(voiceTranscript).map((message, index) => (
                     <ConversationMessage key={`${message.role}-${index}`} {...message} flat />
                   ))}
@@ -625,8 +627,8 @@ export default function PublicLeadFormPage({ showToast }) {
 
       {chatOpen && (
         <FloatingPanel title="Dental Chat Assistant" onClose={() => setChatOpen(false)}>
-          <form className="space-y-3" onSubmit={handleChatSubmit}>
-            <div className="h-80 space-y-3 overflow-y-auto rounded-lg bg-gray-50 p-3">
+          <form className="flex h-full min-h-0 flex-col gap-3" onSubmit={handleChatSubmit}>
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-lg bg-gray-50 p-3">
               {chatMessages.map((message, index) => (
                 <ConversationMessage key={`${message.role}-${index}`} role={message.role} content={message.content} compact />
               ))}
@@ -660,15 +662,31 @@ export default function PublicLeadFormPage({ showToast }) {
 }
 
 function FloatingPanel({ title, children, onClose }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <div className="fixed bottom-36 right-5 z-40 w-[calc(100vw-2.5rem)] max-w-sm rounded-lg border border-emerald-100 bg-white shadow-soft">
-      <div className="flex items-center justify-between border-b border-emerald-100 p-4">
+    <div
+      className={`fixed inset-y-0 right-0 z-50 flex flex-col border-l border-emerald-100 bg-white shadow-2xl transition-[width] duration-300 ease-out ${
+        expanded ? "w-screen" : "w-[clamp(320px,20vw,460px)] max-sm:w-full"
+      }`}
+    >
+      <div className="flex shrink-0 items-center justify-between border-b border-emerald-100 px-5 py-4">
         <h3 className="font-bold text-gray-900">{title}</h3>
-        <button className="rounded-lg p-2 text-gray-500 hover:bg-gray-100" onClick={onClose}>
-          <X size={18} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+            onClick={() => setExpanded((value) => !value)}
+            aria-label={expanded ? "Restore panel size" : "Expand panel"}
+            title={expanded ? "Restore panel size" : "Expand panel"}
+          >
+            {expanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+          </button>
+          <button className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900" onClick={onClose} aria-label="Close panel" title="Close">
+            <X size={19} />
+          </button>
+        </div>
       </div>
-      <div className="p-4">{children}</div>
+      <div className="min-h-0 flex-1 overflow-hidden p-4">{children}</div>
     </div>
   );
 }
