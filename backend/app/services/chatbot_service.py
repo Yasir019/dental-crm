@@ -8,7 +8,11 @@ from app.utils.service_catalog import SERVICE_CATALOG, service_names_text
 
 
 SERVICE_LIST_REQUEST = re.compile(
-    r"\b(what services|which services|what type of services|what kind of services|services do you|services you provide|services you offer|what treatments|treatments do you offer|service list|available services)\b",
+    r"\b(what services|which services|what type of services|what kind of services|services do you|services you provide|services you offer|do you offer|do you provide|what treatments|treatments do you offer|service list|available services)\b",
+    re.IGNORECASE,
+)
+AVAILABILITY_REQUEST = re.compile(
+    r"\b(working days|opening hours|open today|what hours|when are you open|available days|available time|clinic hours|schedule|hours)\b",
     re.IGNORECASE,
 )
 
@@ -24,10 +28,44 @@ def service_list_reply() -> str:
         "Which service are you looking for?"
     )
 
+
+def availability_reply() -> str:
+    return (
+        "Our clinic hours are:\n\n"
+        "- Monday to Friday: 9:00 AM to 5:00 PM\n"
+        "- Saturday: Closed\n"
+        "- Sunday: Closed\n\n"
+        "What dental service are you looking for?"
+    )
+
+
+def specific_service_reply(message: str) -> str | None:
+    normalized_message = (message or "").lower()
+    for item in SERVICE_CATALOG:
+        if item["name"].lower() in normalized_message:
+            return f"Yes, we offer {item['name']}. {item['description']}\n\nWould you like help with {item['name']}?"
+    return None
+
 async def send_chatbot_message(payload: dict):
     # Keep the service directory complete and predictable even if an external
     # workflow returns an outdated or shortened knowledge-base response.
-    if is_service_list_request(payload.get("message", "")):
+    message = payload.get("message", "")
+    specific_service = specific_service_reply(message)
+    if specific_service:
+        return {
+            "reply": specific_service,
+            "leadCaptured": False,
+            "lead": None,
+            "missingFields": ["service"],
+        }
+    if AVAILABILITY_REQUEST.search(message or ""):
+        return {
+            "reply": availability_reply(),
+            "leadCaptured": False,
+            "lead": None,
+            "missingFields": ["service"],
+        }
+    if is_service_list_request(message):
         return {
             "reply": service_list_reply(),
             "leadCaptured": False,
