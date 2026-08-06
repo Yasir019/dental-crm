@@ -1,3 +1,6 @@
+import json
+from typing import Any
+
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
 from app.core.config import settings
 from app.schemas.chatbot import ChatbotLeadCreate
@@ -9,6 +12,59 @@ from app.services.leads_service import create_lead, create_lead_chat_messages, c
 from app.utils.validation import validate_lead
 
 router = APIRouter(prefix="/api/integrations", tags=["integrations"])
+
+
+def _as_dict(value: Any) -> dict:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, dict) else {}
+        except json.JSONDecodeError:
+            return {}
+    return {}
+
+
+def normalize_voice_lead_payload(payload: dict) -> dict:
+    """Accept flat n8n output as well as an AI Agent lead wrapper."""
+    root = _as_dict(payload)
+    candidates = [
+        root,
+        _as_dict(root.get("lead")),
+        _as_dict(root.get("data")),
+        _as_dict(root.get("analysis")),
+        _as_dict(root.get("call_analysis")),
+        _as_dict(root.get("response")),
+    ]
+
+    def first(*keys: str) -> Any:
+        for candidate in candidates:
+            for key in keys:
+                value = candidate.get(key)
+                if value not in (None, "", []):
+                    return value
+        return ""
+
+    normalized = dict(root)
+    normalized.update(
+        {
+            "name": first("name", "fullName", "customerName", "patientName"),
+            "phone": first("phone", "phoneNumber", "customerPhone", "callerPhone"),
+            "email": first("email", "emailAddress", "customerEmail", "patientEmail"),
+            "service": first("service", "dentalService", "interestedService", "requestedService"),
+            "callId": first("callId", "call_id", "retellCallId", "retell_call_id"),
+            "callSummary": first("callSummary", "call_summary", "summary"),
+            "recordingUrl": first("recordingUrl", "recording_url", "recording"),
+            "fromNumber": first("fromNumber", "from_number"),
+            "toNumber": first("toNumber", "to_number"),
+            "callStatus": first("callStatus", "call_status", "status"),
+            "transcript": first("transcript", "conversation"),
+            "userSentiment": first("userSentiment", "user_sentiment", "sentiment"),
+            "rawPayload": root.get("rawPayload") or root.get("raw_payload") or root,
+        }
+    )
+    return normalized
 
 
 def get_retell_call_metadata(raw_payload: dict | None) -> dict:
@@ -83,10 +139,18 @@ async def chatbot_lead_handler(payload: ChatbotLeadCreate, background_tasks: Bac
 
 
 @router.post("/voice-agent/lead", status_code=201)
-async def voice_agent_lead_handler(payload: VoiceLeadCreate, background_tasks: BackgroundTasks, x_integration_key: str | None = Header(default=None)):
+async def voice_agent_lead_handler(payload: dict, background_tasks: BackgroundTasks, x_integration_key: str | None = Header(default=None)):
     require_integration_key(x_integration_key)
 
-    metadata = get_retell_call_metadata(payload.rawPayload)
+    try:
+        voice_payload = VoiceLeadCreate.model_validate(normalize_voice_lead_payload(payload))
+    except Exception as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Voice lead payload is incomplete.", "errors": str(error)},
+        ) from error
+
+    metadata = get_retell_call_metadata(voice_payload.rawPayload)
     if (
         metadata.get("call_purpose") == "appointment_booking_callback"
         or metadata.get("source") == "crm_followup_callback"
@@ -97,24 +161,24 @@ async def voice_agent_lead_handler(payload: VoiceLeadCreate, background_tasks: B
             "leadId": metadata.get("lead_id"),
         }
 
-    notes_parts = [payload.notes or ""]
-    if payload.callSummary:
-        notes_parts.append(f"Call summary:\n{payload.callSummary}")
-    if payload.transcript:
-        notes_parts.append(f"Voice transcript:\n{payload.transcript}")
+    notes_parts = [voice_payload.notes or ""]
+    if voice_payload.callSummary:
+        notes_parts.append(f"Call summary:\n{voice_payload.callSummary}")
+    if voice_payload.transcript:
+        notes_parts.append(f"Voice transcript:\n{voice_payload.transcript}")
 
     data = {
-        "name": payload.name,
-        "phone": payload.phone,
-        "email": payload.email,
-        "service": payload.service,
+        "name": voice_payload.name,
+        "phone": voice_payload.phone,
+        "email": voice_payload.email,
+        "service": voice_payload.service,
         "source": "AI Voice Agent",
         "sourceDetail": "Retell AI voice agent via n8n",
         "notes": "\n\n".join([part for part in notes_parts if part]).strip(),
     }
     validate_lead(data)
     lead = await create_lead(data)
-    voice_call = await create_lead_voice_call(lead["id"], payload.model_dump())
+    voice_call = await create_lead_voice_call(lead["id"], voice_payload.model_dump())
     background_tasks.add_task(dispatch_automatic_followup, lead)
     return {"message": "AI voice lead created successfully.", "lead": lead, "voiceCall": voice_call}
 
