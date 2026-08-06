@@ -666,8 +666,10 @@ function FloatingPanel({ title, children, onClose }) {
 
   return (
     <div
-      className={`fixed inset-y-0 right-0 z-50 flex flex-col border-l border-emerald-100 bg-white shadow-2xl transition-[width] duration-300 ease-out ${
-        expanded ? "w-screen" : "w-[clamp(320px,20vw,460px)] max-sm:w-full"
+      className={`flex flex-col border-emerald-100 bg-white transition-[width,transform] duration-300 ease-out ${
+        expanded
+          ? "fixed inset-y-0 right-0 z-50 w-[25vw] min-w-[320px] max-w-[520px] border-l shadow-2xl max-sm:w-full"
+          : "fixed bottom-36 right-5 z-40 max-h-[calc(100vh-10rem)] w-[calc(100vw-2.5rem)] max-w-sm rounded-lg border shadow-soft"
       }`}
     >
       <div className="flex shrink-0 items-center justify-between border-b border-emerald-100 px-5 py-4">
