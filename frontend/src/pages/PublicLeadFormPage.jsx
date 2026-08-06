@@ -215,7 +215,8 @@ export default function PublicLeadFormPage({ showToast }) {
   const [chatLoading, setChatLoading] = useState(false);
   const [chatBookingOpen, setChatBookingOpen] = useState(false);
   const [chatBookingLoading, setChatBookingLoading] = useState(false);
-  const [chatBooking, setChatBooking] = useState({ name: "", email: "", phone: "", service: "", scheduledStart: "", notes: "" });
+  const [chatBookingError, setChatBookingError] = useState("");
+  const [chatBooking, setChatBooking] = useState({ name: "", email: "", phone: "", service: "", scheduledDate: "", scheduledTime: "", notes: "" });
 
   useEffect(() => {
     return () => {
@@ -407,9 +408,27 @@ export default function PublicLeadFormPage({ showToast }) {
   async function handleChatBooking(event) {
     event.preventDefault();
     if (chatBookingLoading) return;
+    setChatBookingError("");
+    const selected = new Date(`${chatBooking.scheduledDate}T${chatBooking.scheduledTime}`);
+    if (!chatBooking.scheduledDate || !chatBooking.scheduledTime) {
+      setChatBookingError("Choose a weekday and an available time.");
+      return;
+    }
+    if ([0, 6].includes(selected.getDay())) {
+      setChatBookingError("The clinic is closed on Saturday and Sunday. Choose Monday to Friday.");
+      return;
+    }
+    if (selected <= new Date()) {
+      setChatBookingError("Choose a future date and time.");
+      return;
+    }
     setChatBookingLoading(true);
     try {
-      const response = await chatbotService.bookAppointment({ ...chatBooking, sessionId: chatSessionId });
+      const response = await chatbotService.bookAppointment({
+        ...chatBooking,
+        sessionId: chatSessionId,
+        scheduledStart: `${chatBooking.scheduledDate}T${chatBooking.scheduledTime}:00`,
+      });
       setChatMessages((current) => [
         ...current,
         { role: "user", content: "Book an Appointment" },
@@ -417,9 +436,10 @@ export default function PublicLeadFormPage({ showToast }) {
       ]);
       setChatLeadCaptured(true);
       setChatBookingOpen(false);
-      setChatBooking({ name: "", email: "", phone: "", service: "", scheduledStart: "", notes: "" });
+      setChatBooking({ name: "", email: "", phone: "", service: "", scheduledDate: "", scheduledTime: "", notes: "" });
       showToast({ title: "Appointment booked", message: "Your lead and appointment were saved successfully." });
     } catch (error) {
+      setChatBookingError(error.message || "That time is unavailable. Please choose another slot.");
       showToast({ type: "error", title: "Booking failed", message: error.message });
     } finally {
       setChatBookingLoading(false);
@@ -660,7 +680,7 @@ export default function PublicLeadFormPage({ showToast }) {
 
       {chatOpen && (
         <FloatingPanel title="Dental Chat Assistant" onClose={() => setChatOpen(false)}>
-          <form className="flex h-full min-h-0 flex-col gap-3" onSubmit={handleChatSubmit}>
+          <div className="flex h-full min-h-0 flex-col gap-3">
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-lg bg-gray-50 p-3">
               {chatMessages.map((message, index) => (
                 <ConversationMessage key={`${message.role}-${index}`} role={message.role} content={message.content} compact />
@@ -684,6 +704,7 @@ export default function PublicLeadFormPage({ showToast }) {
             {chatBookingOpen && (
               <form className="grid gap-2 rounded-lg border border-emerald-100 bg-emerald-50 p-3" onSubmit={handleChatBooking}>
                 <p className="text-sm font-bold text-emerald-900">Book an appointment</p>
+                <p className="text-xs leading-5 text-emerald-800">Choose a future Monday-Friday slot. Clinic hours are 9:00 AM-5:00 PM, and each appointment is 30 minutes.</p>
                 <input className="form-input" required placeholder="Full name" value={chatBooking.name} onChange={(event) => setChatBooking((current) => ({ ...current, name: event.target.value }))} />
                 <input className="form-input" required type="email" placeholder="Email address" value={chatBooking.email} onChange={(event) => setChatBooking((current) => ({ ...current, email: event.target.value }))} />
                 <input className="form-input" required placeholder="Phone number" value={chatBooking.phone} onChange={(event) => setChatBooking((current) => ({ ...current, phone: event.target.value }))} />
@@ -691,9 +712,22 @@ export default function PublicLeadFormPage({ showToast }) {
                   <option value="">Select a service</option>
                   {SERVICE_KNOWLEDGE.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
                 </select>
-                <label className="text-xs font-semibold text-gray-600">Choose a weekday and time (Monday-Friday, 9 AM-5 PM)
-                  <input className="form-input mt-1" required type="datetime-local" value={chatBooking.scheduledStart} onChange={(event) => setChatBooking((current) => ({ ...current, scheduledStart: event.target.value }))} />
+                <label className="text-xs font-semibold text-gray-600">Date
+                  <input className="form-input mt-1" required type="date" min={new Date().toISOString().slice(0, 10)} value={chatBooking.scheduledDate} onChange={(event) => setChatBooking((current) => ({ ...current, scheduledDate: event.target.value }))} />
                 </label>
+                <label className="text-xs font-semibold text-gray-600">Available time
+                  <select className="form-input mt-1" required value={chatBooking.scheduledTime} onChange={(event) => setChatBooking((current) => ({ ...current, scheduledTime: event.target.value }))}>
+                    <option value="">Select a time</option>
+                    {Array.from({ length: 16 }, (_, index) => {
+                      const hour = 9 + Math.floor(index / 2);
+                      const minute = index % 2 ? "30" : "00";
+                      const value = `${String(hour).padStart(2, "0")}:${minute}`;
+                      const label = `${hour > 12 ? hour - 12 : hour}:${minute} ${hour >= 12 ? "PM" : "AM"}`;
+                      return <option key={value} value={value}>{label}</option>;
+                    })}
+                  </select>
+                </label>
+                {chatBookingError && <p className="rounded-lg bg-red-50 p-2 text-xs font-semibold leading-5 text-red-700">{chatBookingError}</p>}
                 <div className="flex gap-2">
                   <button type="button" className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-700" onClick={() => setChatBookingOpen(false)}>Cancel</button>
                   <button className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={chatBookingLoading}>{chatBookingLoading ? "Booking..." : "Confirm Booking"}</button>
@@ -707,7 +741,7 @@ export default function PublicLeadFormPage({ showToast }) {
               </div>
             )}
 
-            <div className="flex gap-2">
+            <form className="flex gap-2" onSubmit={handleChatSubmit}>
               <input
                 className="form-input"
                 placeholder="Type your question..."
@@ -717,8 +751,8 @@ export default function PublicLeadFormPage({ showToast }) {
               <button className="rounded-lg bg-emerald-600 px-4 font-bold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={chatLoading || !chatInput.trim()}>
                 Send
               </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </FloatingPanel>
       )}
     </main>

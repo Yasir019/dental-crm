@@ -34,7 +34,10 @@ async def chatbot_appointment_handler(payload: ChatbotAppointmentRequest):
             "leadId": lead["id"],
             "scheduledStart": payload.scheduledStart,
             "durationMinutes": 30,
-            "source": "AI Chatbot",
+            # Existing production databases may still have the older appointment
+            # source constraint. The lead keeps the AI Chatbot source; the
+            # appointment remains compatible with both schemas until migration.
+            "source": "Manual",
             "notes": payload.notes,
         }
     )
