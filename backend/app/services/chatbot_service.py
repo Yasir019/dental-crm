@@ -1,11 +1,40 @@
 import httpx
+import re
 from fastapi import HTTPException
 
 from app.core.config import settings
 from app.ai.prompts import chatbot_system_prompt
-from app.utils.service_catalog import SERVICE_CATALOG
+from app.utils.service_catalog import SERVICE_CATALOG, service_names_text
+
+
+SERVICE_LIST_REQUEST = re.compile(
+    r"\b(what services|which services|services do you|services do you provide|what treatments|treatments do you offer|service list|available services|offer)\b",
+    re.IGNORECASE,
+)
+
+
+def is_service_list_request(message: str) -> bool:
+    return bool(SERVICE_LIST_REQUEST.search(message or ""))
+
+
+def service_list_reply() -> str:
+    return (
+        "We offer these dental services:\n\n"
+        f"{service_names_text()}\n\n"
+        "Which service are you looking for?"
+    )
 
 async def send_chatbot_message(payload: dict):
+    # Keep the service directory complete and predictable even if an external
+    # workflow returns an outdated or shortened knowledge-base response.
+    if is_service_list_request(payload.get("message", "")):
+        return {
+            "reply": service_list_reply(),
+            "leadCaptured": False,
+            "lead": None,
+            "missingFields": ["service"],
+        }
+
     if not settings.n8n_chatbot_webhook_url:
         raise HTTPException(
             status_code=503,
