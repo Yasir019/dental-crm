@@ -8,7 +8,7 @@ from app.utils.service_catalog import SERVICE_CATALOG, service_names_text
 
 
 SERVICE_LIST_REQUEST = re.compile(
-    r"\b(what services|which services|services do you|services do you provide|what treatments|treatments do you offer|service list|available services|offer)\b",
+    r"\b(what services|which services|what type of services|what kind of services|services do you|services you provide|services you offer|what treatments|treatments do you offer|service list|available services)\b",
     re.IGNORECASE,
 )
 
