@@ -187,7 +187,7 @@ create table if not exists public.appointments (
     status in ('Scheduled', 'Completed', 'Cancelled', 'No Show')
   ),
   constraint appointments_source_check check (
-    source in ('AI Callback', 'AI Voice Agent', 'Manual')
+    source in ('AI Callback', 'AI Voice Agent', 'AI Chatbot', 'Manual')
   )
 );
 

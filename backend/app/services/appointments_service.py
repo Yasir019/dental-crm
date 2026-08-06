@@ -13,7 +13,7 @@ OPEN_HOUR = 9
 CLOSE_HOUR = 17
 APPOINTMENT_SELECT = "id,lead_id,patient_name,patient_email,patient_phone,service,scheduled_start,scheduled_end,timezone,status,source,retell_call_id,notes,created_at,updated_at"
 VALID_STATUSES = {"Scheduled", "Completed", "Cancelled", "No Show"}
-VALID_SOURCES = {"AI Callback", "AI Voice Agent", "Manual"}
+VALID_SOURCES = {"AI Callback", "AI Voice Agent", "AI Chatbot", "Manual"}
 
 
 def normalize_appointment(row: dict):

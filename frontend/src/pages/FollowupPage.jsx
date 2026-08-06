@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import AiTemplateModal from "../components/AiTemplateModal";
+import ConfirmModal from "../components/ConfirmModal";
 import EmptyState from "../components/EmptyState";
 import FollowupTable from "../components/FollowupTable";
 import { aiService } from "../services/aiService";
-import { emailService } from "../services/emailService";
+import { followupService } from "../services/followupService";
 import { leadsService } from "../services/leadsService";
 
 const PAGE_SIZE = 5;
@@ -14,6 +15,8 @@ export default function FollowupPage({ leads, setLeads, showToast }) {
   const [loadingTemplate, setLoadingTemplate] = useState(false);
   const [sending, setSending] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
+  const [callbackLead, setCallbackLead] = useState(null);
+  const [calling, setCalling] = useState(false);
   const [page, setPage] = useState(1);
 
   const pendingLeads = useMemo(() => leads.filter((lead) => lead.followup === "Pending"), [leads]);
@@ -60,14 +63,32 @@ export default function FollowupPage({ leads, setLeads, showToast }) {
 
     setSending(true);
     try {
-      await emailService.sendEmail({ to: selectedLead.email, subject: template.subject, body: template.body });
-      await markEmailSent(selectedLead);
+      const result = await followupService.sendEmail(selectedLead.id, {
+        subject: template.subject,
+        body: template.body,
+      });
+      setLeads((current) => current.map((item) => (item.id === selectedLead.id ? { ...item, ...(result.lead || {}), followup: "Email Sent" } : item)));
       showToast({ title: "Email sent", message: `Follow-up sent to ${selectedLead.email}.` });
       setSelectedLead(null);
     } catch (error) {
       showToast({ type: "error", title: "Email failed", message: error.message });
     } finally {
       setSending(false);
+    }
+  }
+
+  async function startCallback() {
+    if (!callbackLead) return;
+    setCalling(true);
+    try {
+      const result = await followupService.startCallback(callbackLead.id);
+      setLeads((current) => current.map((item) => (item.id === callbackLead.id ? { ...item, ...(result.lead || {}), followup: "Callback Started" } : item)));
+      showToast({ title: "Callback started", message: `AI agent is calling ${callbackLead.phone}.` });
+      setCallbackLead(null);
+    } catch (error) {
+      showToast({ type: "error", title: "Callback failed", message: error.message });
+    } finally {
+      setCalling(false);
     }
   }
 
@@ -93,6 +114,7 @@ export default function FollowupPage({ leads, setLeads, showToast }) {
           onPageChange={setPage}
           onViewTemplate={handleViewTemplate}
           onMarkSent={markEmailSent}
+          onStartCallback={setCallbackLead}
           updatingId={updatingId}
         />
       )}
@@ -104,6 +126,16 @@ export default function FollowupPage({ leads, setLeads, showToast }) {
         onClose={() => setSelectedLead(null)}
         onCopy={handleCopy}
         onSend={handleSendEmail}
+      />
+      <ConfirmModal
+        open={Boolean(callbackLead)}
+        title="Start AI callback?"
+        message={callbackLead ? `Retell AI will call ${callbackLead.name} at ${callbackLead.phone} now.` : ""}
+        confirmLabel="Start Callback"
+        cancelLabel="Cancel"
+        loading={calling}
+        onCancel={() => setCallbackLead(null)}
+        onConfirm={startCallback}
       />
     </div>
   );

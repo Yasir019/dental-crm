@@ -213,6 +213,9 @@ export default function PublicLeadFormPage({ showToast }) {
   const [chatInput, setChatInput] = useState("");
   const [chatLeadCaptured, setChatLeadCaptured] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatBookingOpen, setChatBookingOpen] = useState(false);
+  const [chatBookingLoading, setChatBookingLoading] = useState(false);
+  const [chatBooking, setChatBooking] = useState({ name: "", email: "", phone: "", service: "", scheduledStart: "", notes: "" });
 
   useEffect(() => {
     return () => {
@@ -390,6 +393,36 @@ export default function PublicLeadFormPage({ showToast }) {
       showToast({ type: "error", title: "Chatbot unavailable", message: error.message });
     } finally {
       setChatLoading(false);
+    }
+  }
+
+  function showChatServices() {
+    setChatMessages((current) => [
+      ...current,
+      { role: "user", content: "View Services" },
+      { role: "assistant", content: `Here are our services:\n\n${SERVICE_KNOWLEDGE.map((item) => `- ${item.name}`).join("\n")}\n\nWhich service are you looking for?` },
+    ]);
+  }
+
+  async function handleChatBooking(event) {
+    event.preventDefault();
+    if (chatBookingLoading) return;
+    setChatBookingLoading(true);
+    try {
+      const response = await chatbotService.bookAppointment({ ...chatBooking, sessionId: chatSessionId });
+      setChatMessages((current) => [
+        ...current,
+        { role: "user", content: "Book an Appointment" },
+        { role: "assistant", content: response.message || "Your appointment is booked successfully. We look forward to seeing you." },
+      ]);
+      setChatLeadCaptured(true);
+      setChatBookingOpen(false);
+      setChatBooking({ name: "", email: "", phone: "", service: "", scheduledStart: "", notes: "" });
+      showToast({ title: "Appointment booked", message: "Your lead and appointment were saved successfully." });
+    } catch (error) {
+      showToast({ type: "error", title: "Booking failed", message: error.message });
+    } finally {
+      setChatBookingLoading(false);
     }
   }
 
@@ -636,6 +669,37 @@ export default function PublicLeadFormPage({ showToast }) {
                 <ConversationMessage content="Thinking..." compact />
               )}
             </div>
+
+            {!chatBookingOpen && !chatLeadCaptured && (
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-3 text-sm font-bold text-white hover:bg-emerald-700" onClick={() => setChatBookingOpen(true)}>
+                  <CalendarCheck size={16} /> Book an Appointment
+                </button>
+                <button type="button" className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50" onClick={showChatServices}>
+                  <Stethoscope size={16} /> View Services
+                </button>
+              </div>
+            )}
+
+            {chatBookingOpen && (
+              <form className="grid gap-2 rounded-lg border border-emerald-100 bg-emerald-50 p-3" onSubmit={handleChatBooking}>
+                <p className="text-sm font-bold text-emerald-900">Book an appointment</p>
+                <input className="form-input" required placeholder="Full name" value={chatBooking.name} onChange={(event) => setChatBooking((current) => ({ ...current, name: event.target.value }))} />
+                <input className="form-input" required type="email" placeholder="Email address" value={chatBooking.email} onChange={(event) => setChatBooking((current) => ({ ...current, email: event.target.value }))} />
+                <input className="form-input" required placeholder="Phone number" value={chatBooking.phone} onChange={(event) => setChatBooking((current) => ({ ...current, phone: event.target.value }))} />
+                <select className="form-input" required value={chatBooking.service} onChange={(event) => setChatBooking((current) => ({ ...current, service: event.target.value }))}>
+                  <option value="">Select a service</option>
+                  {SERVICE_KNOWLEDGE.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+                </select>
+                <label className="text-xs font-semibold text-gray-600">Choose a weekday and time (Monday-Friday, 9 AM-5 PM)
+                  <input className="form-input mt-1" required type="datetime-local" value={chatBooking.scheduledStart} onChange={(event) => setChatBooking((current) => ({ ...current, scheduledStart: event.target.value }))} />
+                </label>
+                <div className="flex gap-2">
+                  <button type="button" className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-700" onClick={() => setChatBookingOpen(false)}>Cancel</button>
+                  <button className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={chatBookingLoading}>{chatBookingLoading ? "Booking..." : "Confirm Booking"}</button>
+                </div>
+              </form>
+            )}
 
             {chatLeadCaptured && (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">

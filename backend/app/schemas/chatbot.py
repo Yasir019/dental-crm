@@ -14,6 +14,16 @@ class ChatbotMessageRequest(BaseModel):
     serviceCatalog: list[dict] = []
 
 
+class ChatbotAppointmentRequest(BaseModel):
+    sessionId: str = ""
+    name: str
+    email: str
+    phone: str
+    service: str
+    scheduledStart: str
+    notes: str = ""
+
+
 class ChatbotLeadCreate(BaseModel):
     sessionId: str | None = ""
     name: str

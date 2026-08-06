@@ -1,8 +1,8 @@
-import { Mail, Sparkles } from "lucide-react";
+import { Mail, PhoneCall } from "lucide-react";
 import { formatDateTime } from "../utils/formatters";
 import Pagination from "./Pagination";
 
-export default function FollowupTable({ leads, page, totalPages, onPageChange, onViewTemplate, onMarkSent, updatingId }) {
+export default function FollowupTable({ leads, page, totalPages, onPageChange, onViewTemplate, onMarkSent, onStartCallback, updatingId }) {
   return (
     <div className="overflow-hidden rounded-lg border border-emerald-100 bg-white shadow-soft">
       <div className="hidden overflow-x-auto md:block">
@@ -27,7 +27,7 @@ export default function FollowupTable({ leads, page, totalPages, onPageChange, o
                 <td className="px-4 py-4 text-sm text-gray-600">{lead.source || "Website Form"}</td>
                 <td className="px-4 py-4 text-sm text-gray-600">{lead.followup}</td>
                 <td className="px-4 py-4">
-                  <ActionButtons lead={lead} onViewTemplate={onViewTemplate} onMarkSent={onMarkSent} updatingId={updatingId} />
+                  <ActionButtons lead={lead} onViewTemplate={onViewTemplate} onMarkSent={onMarkSent} onStartCallback={onStartCallback} updatingId={updatingId} />
                 </td>
               </tr>
             ))}
@@ -51,7 +51,7 @@ export default function FollowupTable({ leads, page, totalPages, onPageChange, o
               <p>Source: {lead.source || "Website Form"}</p>
             </div>
             <div className="mt-4">
-              <ActionButtons lead={lead} onViewTemplate={onViewTemplate} onMarkSent={onMarkSent} updatingId={updatingId} />
+              <ActionButtons lead={lead} onViewTemplate={onViewTemplate} onMarkSent={onMarkSent} onStartCallback={onStartCallback} updatingId={updatingId} />
             </div>
           </div>
         ))}
@@ -61,12 +61,12 @@ export default function FollowupTable({ leads, page, totalPages, onPageChange, o
   );
 }
 
-function ActionButtons({ lead, onViewTemplate, onMarkSent, updatingId }) {
+function ActionButtons({ lead, onViewTemplate, onMarkSent, onStartCallback, updatingId }) {
   return (
     <div className="flex flex-wrap gap-2">
       <button className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100" onClick={() => onViewTemplate(lead)}>
         <span className="inline-flex items-center gap-1">
-          <Sparkles size={15} /> View AI Template
+          <Mail size={15} /> Send Email
         </span>
       </button>
       <button
@@ -75,7 +75,16 @@ function ActionButtons({ lead, onViewTemplate, onMarkSent, updatingId }) {
         disabled={updatingId === lead.id}
       >
         <span className="inline-flex items-center gap-1">
-          <Mail size={15} /> Mark Email Sent
+          <Mail size={15} /> Mark Sent
+        </span>
+      </button>
+      <button
+        className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+        onClick={() => onStartCallback(lead)}
+        disabled={updatingId === lead.id || !lead.phone}
+      >
+        <span className="inline-flex items-center gap-1">
+          <PhoneCall size={15} /> AI Callback
         </span>
       </button>
     </div>
