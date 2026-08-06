@@ -20,3 +20,7 @@ SERVICE_CATALOG = [
 
 def service_catalog_text() -> str:
     return "\n".join(f"- {item['name']}: {item['description']}" for item in SERVICE_CATALOG)
+
+
+def service_names_text() -> str:
+    return "\n".join(f"- {item['name']}" for item in SERVICE_CATALOG)

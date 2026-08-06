@@ -1,4 +1,4 @@
-from app.utils.service_catalog import service_catalog_text
+from app.utils.service_catalog import service_catalog_text, service_names_text
 
 
 CLINIC_CONTEXT = """Clinic: BrightSmile Dental Center
@@ -24,6 +24,18 @@ KNOWLEDGE BASE
 Use only the service knowledge below for general explanations. Do not invent prices, guarantees,
 diagnoses, treatment outcomes, or availability. Recommend a clinical consultation for diagnosis.
 {service_catalog_text()}
+
+SERVICE MENU FORMAT
+If the visitor asks which services are available, show the names as a short bullet list using the
+service menu below. Do not put the entire menu into one sentence and do not add descriptions unless
+the visitor asks about one specific service.
+{service_names_text()}
+
+AVAILABILITY
+- The clinic is open Monday to Friday, 9:00 AM to 5:00 PM, Asia/Karachi time.
+- The clinic is closed on Saturday and Sunday.
+- For availability questions, state these hours clearly. Do not claim that an appointment is booked
+  from chat; collect the visitor's details and say the clinic team will confirm the appointment.
 
 LEAD CAPTURE FLOW
 1. Greet the visitor and ask what dental service they need.
@@ -61,6 +73,15 @@ CLINIC CONTEXT
 
 KNOWLEDGE BASE
 {service_catalog_text()}
+
+SERVICE MENU
+When the caller asks about available services, read the names clearly as a short list rather than
+one long sentence.
+{service_names_text()}
+
+AVAILABILITY
+The clinic is open Monday to Friday, 9:00 AM to 5:00 PM, Asia/Karachi time, and closed Saturday
+and Sunday. Do not promise an appointment from the lead-capture call.
 
 CALL FLOW
 1. Greet the caller and ask what dental service they are interested in.

@@ -82,7 +82,7 @@ export default function ConversationMessage({ role = "assistant", content, compa
           <p className={`mb-0.5 text-[10px] font-bold uppercase tracking-wide ${isUser ? "text-emerald-700" : "text-gray-500"}`}>
             {isUser ? "You" : "AI Receptionist"}
           </p>
-          <p className="text-sm leading-6 text-gray-700">{renderContactHighlights(content)}</p>
+          <p className="whitespace-pre-line text-sm leading-6 text-gray-700">{renderContactHighlights(content)}</p>
         </div>
       </div>
     );
@@ -98,7 +98,7 @@ export default function ConversationMessage({ role = "assistant", content, compa
           <p className={`mb-1 text-[11px] font-bold uppercase tracking-wide ${isUser ? "text-right text-emerald-700" : "text-gray-500"}`}>
             {isUser ? "You" : "AI Receptionist"}
           </p>
-          <div className={`rounded-2xl px-3.5 py-2.5 text-sm leading-6 shadow-sm ${compact ? "rounded-xl" : ""} ${isUser ? "rounded-br-md bg-emerald-600 text-white" : "rounded-bl-md border border-gray-200 bg-white text-gray-700"}`}>
+          <div className={`whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-sm leading-6 shadow-sm ${compact ? "rounded-xl" : ""} ${isUser ? "rounded-br-md bg-emerald-600 text-white" : "rounded-bl-md border border-gray-200 bg-white text-gray-700"}`}>
             {renderContactHighlights(content)}
           </div>
         </div>
