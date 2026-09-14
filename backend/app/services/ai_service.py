@@ -17,10 +17,10 @@ async def generate_followup_template(name: str, service: str):
 
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
-            "https://api.openai.com/v1/chat/completions",
+            f"{settings.ai_api_base_url.rstrip('/')}/chat/completions",
             headers={"Authorization": f"Bearer {settings.ai_api_key}"},
             json={
-                "model": "gpt-4o-mini",
+                "model": settings.ai_model,
                 "messages": [
                     {
                         "role": "system",

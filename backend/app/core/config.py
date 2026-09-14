@@ -13,6 +13,8 @@ class Settings:
     auth_secret: str = os.getenv("AUTH_SECRET", "change-this-auth-secret")
     integration_api_key: str | None = os.getenv("INTEGRATION_API_KEY")
     ai_api_key: str | None = os.getenv("AI_API_KEY")
+    ai_api_base_url: str = os.getenv("AI_API_BASE_URL", "https://api.openai.com/v1")
+    ai_model: str = os.getenv("AI_MODEL", "gpt-4o-mini")
     email_api_key: str | None = os.getenv("EMAIL_API_KEY")
     email_from: str | None = os.getenv("EMAIL_FROM")
     n8n_chatbot_webhook_url: str | None = os.getenv("N8N_CHATBOT_WEBHOOK_URL")
