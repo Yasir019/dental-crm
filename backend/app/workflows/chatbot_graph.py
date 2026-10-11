@@ -69,6 +69,29 @@ def clean_lead_fields(lead: dict) -> dict:
     }
 
 
+def clean_agent_reply(value: str) -> str:
+    """Remove structured lead-state text that a model may append to its reply."""
+    reply = (value or "").strip()
+    if not reply:
+        return ""
+
+    # Some models follow the JSON contract but still include an internal
+    # debugging section inside the user-facing reply string.
+    markers = ("**lead state**", "lead state:", "lead_state:")
+    lowered = reply.lower()
+    cut_positions = [lowered.find(marker) for marker in markers if lowered.find(marker) >= 0]
+    if cut_positions:
+        reply = reply[: min(cut_positions)].rstrip()
+
+    # Never show a raw JSON/code-fence payload if it is returned without a
+    # recognizable marker.
+    fence_position = reply.find("```json")
+    if fence_position >= 0:
+        reply = reply[:fence_position].rstrip()
+
+    return reply
+
+
 async def normalize_incoming(state: ChatbotState):
     history = [
         {"role": item.get("role"), "content": (item.get("content") or "").strip()}
@@ -143,7 +166,7 @@ async def normalize_agent_output(state: ChatbotState):
             known[field] = clean_lead_fields({field: found.group(0)})[field]
     missing_fields = [field for field in REQUIRED_FIELDS if not known[field]]
 
-    reply = str(output.get("reply") or "").strip()
+    reply = clean_agent_reply(str(output.get("reply") or ""))
     if missing_fields and (not reply or output.get("leadComplete")):
         # The agent failed or claimed completion while a required field is still missing or invalid.
         reply = FIELD_QUESTIONS[missing_fields[0]]

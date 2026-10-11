@@ -457,7 +457,7 @@ textarea {
 .assistant-dock__copy { display: flex; min-width: 92px; flex-direction: column; gap: 2px; }
 .assistant-dock__eyebrow { color: #263d2f; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; line-height: 1.1; text-transform: uppercase; }
 .assistant-dock__hint { color: #809087; font-size: 0.72rem; line-height: 1.2; }
-.assistant-dock__actions { display: flex; gap: 6px; }
+.assistant-dock__actions { display: flex; flex-direction: column; gap: 6px; }
 .assistant-dock__button {
   display: inline-flex; min-height: 44px; align-items: center; gap: 7px; border: 1px solid transparent;
   border-radius: 15px; padding: 0 12px; font-size: 0.82rem; font-weight: 750;

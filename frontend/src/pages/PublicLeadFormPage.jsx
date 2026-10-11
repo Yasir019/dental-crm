@@ -849,7 +849,7 @@ function FloatingPanel({ icon: Icon, title, subtitle, live = false, children, on
       className={`flex flex-col overflow-hidden border-[#e2ebe0] bg-white transition-[width,transform] duration-300 ease-out ${
         expanded
           ? "fixed inset-y-0 right-0 z-50 w-[25vw] min-w-[340px] max-w-[520px] border-l shadow-[0_0_48px_rgba(23,27,24,0.16)] max-sm:w-full"
-          : "fixed bottom-24 right-5 z-40 h-[min(600px,calc(100vh-7.5rem))] w-[calc(100vw-2.5rem)] max-w-[380px] rounded-[20px] border shadow-[0_18px_50px_rgba(23,27,24,0.16)]"
+          : "fixed bottom-24 right-5 z-40 h-[min(600px,calc(100vh-7.5rem))] w-[calc(100vw-2rem)] max-w-[460px] rounded-[20px] border shadow-[0_18px_50px_rgba(23,27,24,0.16)]"
       }`}
     >
       <div className="assistant-panel__header flex shrink-0 items-center gap-3 border-b border-[#edf1ea] px-4 py-3.5">
