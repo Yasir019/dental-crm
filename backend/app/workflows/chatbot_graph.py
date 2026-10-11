@@ -117,8 +117,9 @@ def infer_known_from_history(history: list[dict]) -> dict:
                 known["phone"] = clean_lead_fields({"phone": phone_match.group(0)})["phone"]
         if not known["name"] and index > 0 and item.get("role") == "user":
             previous = str(history[index - 1].get("content") or "").lower()
-            if "full name" in previous or "your name" in previous:
-                known["name"] = content[:120]
+            # Only a short, letters-only answer is taken as a name; anything else is left to the agent.
+            if ("full name" in previous or "your name" in previous) and re.fullmatch(r"[A-Za-z][A-Za-z .'-]{1,58}", content) and len(content.split()) <= 4:
+                known["name"] = content
     return known
 
 
@@ -149,22 +150,8 @@ async def prepare_agent_input(state: ChatbotState):
         f"Session ID: {state['sessionId']}\n"
         f"Conversation history:\n{history_text}\n\n"
         f"Lead fields collected so far:\n{known_text}\n\n"
-        "Required lead fields in this exact order: service, name, email, phone.\n"
-        "Conversation rules:\n"
-        "1. If user sends a normal greeting or general message, reply with a greeting/answer and end with: What service are you looking for?\n"
-        "2. Collect only one missing field at a time. Do not ask for name, email, and phone in one message.\n"
-        "3. First identify service. Then ask name. After name ask email. After email ask phone number.\n"
-        "4. When service, name, email, and phone are all known, say: Our team will follow back soon.\n"
-        "5. In \"lead\", always fill every field the visitor has already given anywhere in the conversation history "
-        "or in the collected fields. Map what they describe to the closest exact service name "
-        "(for example a cavity or filling is Dental Fillings, braces is Orthodontics).\n"
-        "6. Never invent a name, email, or phone. Leave a field empty only when the visitor has not provided it.\n"
-        "7. Ask only for the first field that is still missing. Never ask again for a field you already have.\n"
-        "8. Treat the collected fields and full conversation history as durable memory. Never reset the name, service, email, or phone after the visitor provides it.\n"
-        "9. Reply naturally to the visitor's latest message. If they ask how to book, continue the current lead flow instead of greeting them as a new visitor.\n"
-        "10. Return ONLY valid JSON text. Do not use markdown, debugging labels, lead state text, or code fences.\n"
-        'JSON shape: {"reply":"string","lead":{"name":"","phone":"","email":"","service":"","notes":""},'
-        '"leadComplete":false,"missingFields":["service","name","email","phone"]}'
+        f"Next detail to ask for (only if it fits naturally): {next((field for field in REQUIRED_FIELDS if not known.get(field)), 'none, all collected')}\n\n"
+        'Return ONLY this JSON object: {"reply":"string","lead":{"name":"","phone":"","email":"","service":"","notes":""}}'
     )
     return {"agentInput": agent_input}
 
@@ -172,18 +159,36 @@ async def prepare_agent_input(state: ChatbotState):
 async def dental_lead_agent(state: ChatbotState):
     # Deliberately compact: free AI tiers limit tokens per minute across all visitors.
     system = (
-        f"You are the {settings.dental_clinic_name} website AI agent. Return only valid JSON text. "
-        "Collect service, then name, then email, then phone one at a time. If normal greeting, greet and ask "
-        "what service they are looking for. Use the full conversation history as memory: preserve every "
-        "field already supplied, continue the current lead instead of restarting, and answer the latest "
-        "question directly. When all fields are collected, reply that our team will follow back soon. "
-        "The reply value must contain only natural user-facing text; never include lead state, JSON, markdown, "
-        "debugging notes, or code fences inside it.\n"
+        f"You are the front-desk assistant for {settings.dental_clinic_name}, chatting with a visitor on the clinic website. "
+        "Sound like a friendly, capable receptionist, not a script.\n\n"
+        "HOW TO REPLY\n"
+        "- Answer the visitor's latest message first, directly, in one to three short sentences.\n"
+        "- Then take one step toward a booking: ask for exactly one missing detail, in this order: the service they need, "
+        "their full name, email, phone number. Never ask for two details at once, never ask for one you already have, "
+        "and do not repeat the wording of your previous question or anything else you already said (express sympathy once only).\n"
+        "- If the visitor asked something that deserves a full answer, the answer comes first and the question is a short add-on.\n"
+        "- If they describe pain or an unclear problem, show a little empathy and suggest a General Dentistry check-up so a dentist "
+        "can look at it; do not guess the treatment. For a clear wish (whiter teeth, braces, a missing tooth) name the matching service.\n"
+        "- If they refuse to share a detail, accept it in one sentence, do not ask for anything else in that reply, and tell them "
+        "they can use the Book an appointment button below the chat or the form on this page instead.\n"
+        "- Plain text only: no markdown, no asterisks, no headings, no JSON or field names inside the reply. "
+        "Use lines starting with \"- \" only when listing three or more items.\n"
+        "- Reply in the visitor's language (English or Roman Urdu).\n\n"
+        "FACTS\n"
         f"{CLINIC_CONTEXT}"
         "Services (the lead service must be one of these exact names):\n"
         f"{service_catalog_text()}\n"
-        "Be warm and concise. Never diagnose, quote prices, or claim an appointment is booked. For severe pain, "
-        "swelling, bleeding, trauma, fever, or breathing difficulty, advise urgent local care."
+        "You cannot book or confirm a time in chat. Once you have their details the clinic team calls to confirm an appointment; "
+        "they can also pick a slot themselves with the Book an appointment button below the chat.\n"
+        "You do not know prices, dentist names, the street address, or insurance details. Say the team will confirm those, never guess.\n\n"
+        "SAFETY\n"
+        "Never diagnose or give treatment instructions. For severe pain, facial swelling, uncontrolled bleeding, trauma, fever, "
+        "or breathing difficulty, tell them to seek urgent care now, then offer to pass their details to the clinic.\n\n"
+        "LEAD FIELDS\n"
+        "In \"lead\", fill every field the visitor has given anywhere in the conversation or in the collected fields, and keep "
+        "them once given. Map what they describe to the closest exact service name (a cavity or filling is Dental Fillings, "
+        "braces is Orthodontics). Never invent a name, email, or phone; leave a field empty until the visitor provides it. "
+        "When all four are known, thank them and say the team will be in touch."
     )
     try:
         output = await chat_completion(system, state["agentInput"], max_tokens=1200, temperature=0.2, json_mode=True, reasoning_effort="medium")
@@ -260,7 +265,12 @@ async def create_crm_lead(state: ChatbotState):
     except (HTTPException, httpx.HTTPError) as error:
         print(f"Chatbot transcript could not be saved: {getattr(error, 'detail', error)}")
 
-    return {"reply": CAPTURED_REPLY, "leadCaptured": True, "savedLead": lead, "newLeadCreated": True, "missingFields": []}
+    first_name = lead_data["name"].split()[0]
+    reply = (
+        f"Thank you, {first_name}. I've passed your {lead_data['service']} request to our team. "
+        f"They will contact you on {lead_data['phone']} during clinic hours, Monday to Friday, 9 AM to 5 PM."
+    )
+    return {"reply": reply, "leadCaptured": True, "savedLead": lead, "newLeadCreated": True, "missingFields": []}
 
 
 async def return_chat_reply(state: ChatbotState):

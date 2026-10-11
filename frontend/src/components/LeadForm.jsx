@@ -12,7 +12,14 @@ const initialForm = {
   notes: ""
 };
 
-export default function LeadForm({ onSubmit, loading, submitLabel = "Submit Inquiry", initialValues = initialForm }) {
+const defaultPlaceholders = {
+  name: "Patient name",
+  phone: "+1 555 123 4567",
+  email: "patient@email.com",
+  notes: "Extra details, preferred time, or staff notes"
+};
+
+export default function LeadForm({ onSubmit, loading, submitLabel = "Submit Inquiry", initialValues = initialForm, notesLabel = "Notes", placeholders = defaultPlaceholders }) {
   const [form, setForm] = useState({ ...initialForm, ...initialValues });
   const [errors, setErrors] = useState({});
 
@@ -43,13 +50,13 @@ export default function LeadForm({ onSubmit, loading, submitLabel = "Submit Inqu
     <form onSubmit={handleSubmit} className="rounded-lg border border-emerald-100 bg-white p-6 shadow-soft">
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="Name" error={errors.name}>
-          <input className="form-input" value={form.name} onChange={(event) => updateField("name", event.target.value)} placeholder="Patient name" />
+          <input className="form-input" value={form.name} onChange={(event) => updateField("name", event.target.value)} placeholder={placeholders.name} />
         </Field>
         <Field label="Phone Number" error={errors.phone}>
-          <input className="form-input" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} placeholder="+1 555 123 4567" />
+          <input className="form-input" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} placeholder={placeholders.phone} />
         </Field>
         <Field label="Email" error={errors.email}>
-          <input className="form-input" value={form.email} onChange={(event) => updateField("email", event.target.value)} placeholder="patient@email.com" />
+          <input className="form-input" value={form.email} onChange={(event) => updateField("email", event.target.value)} placeholder={placeholders.email} />
         </Field>
         <Field label="Service" error={errors.service}>
           <select className="form-input" value={form.service} onChange={(event) => updateField("service", event.target.value)}>
@@ -63,12 +70,12 @@ export default function LeadForm({ onSubmit, loading, submitLabel = "Submit Inqu
         </Field>
       </div>
       <div className="mt-5">
-        <Field label="Notes">
+        <Field label={notesLabel}>
           <textarea
             className="form-input min-h-24"
             value={form.notes || ""}
             onChange={(event) => updateField("notes", event.target.value)}
-            placeholder="Extra details, preferred time, or staff notes"
+            placeholder={placeholders.notes}
           />
         </Field>
       </div>

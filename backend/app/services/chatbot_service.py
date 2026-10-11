@@ -3,7 +3,7 @@ import re
 from fastapi import BackgroundTasks
 
 from app.services.followup_service import dispatch_automatic_followup
-from app.utils.service_catalog import SERVICE_CATALOG, service_names_text
+from app.utils.service_catalog import service_names_text
 from app.workflows.chatbot_graph import run_chatbot_turn
 
 
@@ -12,7 +12,7 @@ SERVICE_LIST_REQUEST = re.compile(
     re.IGNORECASE,
 )
 AVAILABILITY_REQUEST = re.compile(
-    r"\b(working days|opening hours|open today|what hours|when are you open|available days|available time|clinic hours|schedule|hours)\b",
+    r"\b(working days|opening hours|open today|what hours|when are you open|available days|clinic hours|your hours|opening times|timings?)\b",
     re.IGNORECASE,
 )
 
@@ -39,25 +39,10 @@ def availability_reply() -> str:
     )
 
 
-def specific_service_reply(message: str) -> str | None:
-    normalized_message = (message or "").lower()
-    for item in SERVICE_CATALOG:
-        if item["name"].lower() in normalized_message:
-            return f"Yes, we offer {item['name']}. {item['description']}\n\nWould you like help with {item['name']}?"
-    return None
-
 async def send_chatbot_message(payload: dict, background_tasks: BackgroundTasks | None = None):
-    # Keep the service directory complete and predictable regardless of what
-    # the AI agent would answer.
+    # Keep the hours and the service directory complete and predictable
+    # regardless of what the AI agent would answer.
     message = payload.get("message", "")
-    specific_service = specific_service_reply(message)
-    if specific_service:
-        return {
-            "reply": specific_service,
-            "leadCaptured": False,
-            "lead": None,
-            "missingFields": ["service"],
-        }
     if AVAILABILITY_REQUEST.search(message or ""):
         return {
             "reply": availability_reply(),

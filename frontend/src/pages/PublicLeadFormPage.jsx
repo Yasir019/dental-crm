@@ -1,30 +1,18 @@
 import {
-  Activity,
-  AlignCenter,
   ArrowRight,
   ArrowUp,
-  Baby,
-  CalendarCheck,
+  AudioLines,
   Check,
-  CircleDot,
-  Crown,
-  HeartHandshake,
-  HeartPulse,
+  Clock,
+  Mail,
+  MapPin,
   Maximize2,
   MessageCircle,
-  MessagesSquare,
   Minimize2,
   Phone,
-  PhoneCall,
   PhoneOff,
-  ScanFace,
-  ShieldPlus,
-  ShieldCheck,
-  Smile,
-  Sparkles,
+  RotateCcw,
   Star,
-  Stethoscope,
-  WandSparkles,
   X
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -36,93 +24,66 @@ import { voiceService } from "../services/voiceService";
 import ConversationMessage, { parseConversationTranscript } from "../components/ConversationMessage";
 import { SERVICE_KNOWLEDGE } from "../utils/constants";
 
-const serviceCards = [
+const navLinks = [
+  { href: "#services", label: "Services" },
+  { href: "#results", label: "Results" },
+  { href: "#reviews", label: "Reviews" },
+  { href: "#contact", label: "Contact" }
+];
+
+const serviceGroups = [
   {
-    icon: Stethoscope,
-    title: "General Dentistry",
-    text: "Complete preventive care for a healthy smile."
+    title: "Everyday care",
+    note: "Check-ups and prevention for the whole family",
+    items: [
+      { name: "General Dentistry", text: "Complete preventive care for a healthy smile." },
+      { name: "Pediatric Dentistry", text: "Gentle dental care for children and growing smiles." },
+      { name: "Scaling & Polishing", text: "Professional cleaning for fresher, healthier teeth." },
+      { name: "Dental Fillings", text: "Durable, natural-looking repair for damaged teeth." }
+    ]
   },
   {
-    icon: Smile,
-    title: "Cosmetic Dentistry",
-    text: "Personalized treatments designed to enhance your smile."
+    title: "Smile design",
+    note: "Treatments that change how your smile looks",
+    items: [
+      { name: "Cosmetic Dentistry", text: "Personalized treatments designed to enhance your smile." },
+      { name: "Teeth Whitening", text: "Professional whitening for a visibly brighter smile." },
+      { name: "Veneers", text: "Refine the shape and appearance of your smile." },
+      { name: "Gum Recontouring", text: "Reshape the gumline for a more balanced smile." }
+    ]
   },
   {
-    icon: Baby,
-    title: "Pediatric Dentistry",
-    text: "Gentle dental care for children and growing smiles."
+    title: "Repair and replace",
+    note: "Saving damaged teeth and replacing missing ones",
+    items: [
+      { name: "Root Canal", text: "Relieve pain and save an infected natural tooth." },
+      { name: "Dental Crowns", text: "Protect and strengthen teeth with custom crowns." },
+      { name: "Dental Implants", text: "Long-term replacement options for missing teeth." },
+      { name: "Dentures", text: "Comfortable custom solutions to restore confidence." }
+    ]
   },
   {
-    icon: Sparkles,
-    title: "Scaling & Polishing",
-    text: "Professional cleaning for fresher, healthier teeth."
-  },
-  {
-    icon: ScanFace,
-    title: "Maxillofacial Surgery",
-    text: "Specialist facial and jaw treatment planning."
-  },
-  {
-    icon: WandSparkles,
-    title: "Teeth Whitening",
-    text: "Professional whitening for a visibly brighter smile."
-  },
-  {
-    icon: CircleDot,
-    title: "Dental Fillings",
-    text: "Durable, natural-looking repair for damaged teeth."
-  },
-  {
-    icon: AlignCenter,
-    title: "Orthodontics",
-    text: "Braces and alignment options for a balanced smile."
-  },
-  {
-    icon: Activity,
-    title: "Tooth Extraction",
-    text: "Careful removal when a tooth cannot be restored."
-  },
-  {
-    icon: Crown,
-    title: "Dental Crowns",
-    text: "Protect and strengthen teeth with custom crowns."
-  },
-  {
-    icon: HeartPulse,
-    title: "Root Canal",
-    text: "Relieve pain and save an infected natural tooth."
-  },
-  {
-    icon: Smile,
-    title: "Veneers",
-    text: "Refine the shape and appearance of your smile."
-  },
-  {
-    icon: ShieldPlus,
-    title: "Dental Implants",
-    text: "Long-term replacement options for missing teeth."
-  },
-  {
-    icon: HeartHandshake,
-    title: "Dentures",
-    text: "Comfortable custom solutions to restore confidence."
-  },
-  {
-    icon: AlignCenter,
-    title: "Clear Aligners",
-    text: "Discreet removable aligners for straighter teeth."
-  },
-  {
-    icon: Activity,
-    title: "Gum Recontouring",
-    text: "Reshape the gumline for a more balanced smile."
+    title: "Alignment and surgery",
+    note: "Straighter teeth and specialist procedures",
+    items: [
+      { name: "Orthodontics", text: "Braces and alignment options for a balanced smile." },
+      { name: "Clear Aligners", text: "Discreet removable aligners for straighter teeth." },
+      { name: "Tooth Extraction", text: "Careful removal when a tooth cannot be restored." },
+      { name: "Maxillofacial Surgery", text: "Specialist facial and jaw treatment planning." }
+    ]
   }
 ];
 
 const stats = [
-  { icon: HeartHandshake, label: "Happy Patients", value: "150+" },
-  { icon: Sparkles, label: "Smile Restorations", value: "500+" },
-  { icon: ShieldCheck, label: "Routine Treatments", value: "800+" }
+  { label: "Happy patients", value: "150+" },
+  { label: "Smile restorations", value: "500+" },
+  { label: "Routine treatments", value: "800+" }
+];
+
+const bookingSteps = [
+  { title: "Send your details", text: "Your name, how to reach you, and the treatment you are interested in." },
+  { title: "We call you back", text: "Reception agrees a day and time with you during clinic hours." },
+  { title: "Visit the clinic", text: "A dentist examines you and explains your options before any treatment." }
 ];
 
 const smileResults = [
@@ -161,7 +122,7 @@ const testimonials = [
 const initialChatMessages = [
   {
     role: "assistant",
-    content: "Hi, I am the clinic assistant. Ask me about our dental services, or tell me what you need help with."
+    content: "Hi, I'm the BrightSmile assistant. Ask about a treatment or our hours, or tell me what's bothering you and I'll point you to the right care."
   }
 ];
 const VOICE_CALL_CONNECT_TIMEOUT_MS = 15000;
@@ -212,11 +173,12 @@ export default function PublicLeadFormPage({ showToast }) {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [voiceConnecting, setVoiceConnecting] = useState(false);
   const [voiceCallActive, setVoiceCallActive] = useState(false);
-  const [voiceStatus, setVoiceStatus] = useState("Ready to start a secure voice call with our AI assistant.");
+  const [selectedService, setSelectedService] = useState("");
+  const [voiceStatus, setVoiceStatus] = useState("Ask about a treatment or our hours, or leave your details for a call back.");
   const [voiceTranscript, setVoiceTranscript] = useState("");
   const [voiceError, setVoiceError] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
-  const [chatSessionId] = useState(() => {
+  const [chatSessionId, setChatSessionId] = useState(() => {
     const saved = window.localStorage.getItem(`${CHAT_MEMORY_KEY}:session`);
     const sessionId = saved || createChatSessionId();
     window.localStorage.setItem(`${CHAT_MEMORY_KEY}:session`, sessionId);
@@ -237,6 +199,14 @@ export default function PublicLeadFormPage({ showToast }) {
   const [chatBookingLoading, setChatBookingLoading] = useState(false);
   const [chatBookingError, setChatBookingError] = useState("");
   const [chatBooking, setChatBooking] = useState({ name: "", email: "", phone: "", service: "", scheduledDate: "", scheduledTime: "", notes: "" });
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "BrightSmile Dental Center, Islamabad";
+    return () => {
+      document.title = previousTitle;
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -391,9 +361,39 @@ export default function PublicLeadFormPage({ showToast }) {
     }
   }
 
-  async function handleChatSubmit(event) {
+  function openVoice() {
+    setChatOpen(false);
+    setVoiceOpen(true);
+  }
+
+  function openChat() {
+    handleCloseVoicePanel();
+    setChatOpen(true);
+  }
+
+  function chooseService(service) {
+    setSelectedService(service);
+    setSubmitted(false);
+    document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function resetChat() {
+    const sessionId = createChatSessionId();
+    window.localStorage.setItem(`${CHAT_MEMORY_KEY}:session`, sessionId);
+    setChatSessionId(sessionId);
+    setChatMessages(initialChatMessages);
+    setChatLeadCaptured(false);
+    setChatBookingOpen(false);
+    setChatInput("");
+  }
+
+  function handleChatSubmit(event) {
     event.preventDefault();
-    const message = chatInput.trim();
+    sendChatMessage(chatInput);
+  }
+
+  async function sendChatMessage(text) {
+    const message = text.trim();
     if (!message || chatLoading) return;
 
     const nextMessages = [...chatMessages, { role: "user", content: message }];
@@ -420,7 +420,7 @@ export default function PublicLeadFormPage({ showToast }) {
         ...current,
         {
           role: "assistant",
-          content: "I could not reach the AI assistant right now. Please use the form, or try again in a moment."
+          content: "That message did not go through. Try again in a moment, or use the consultation form on this page."
         }
       ]);
       showToast({ type: "error", title: "Chatbot unavailable", message: error.message });
@@ -432,8 +432,8 @@ export default function PublicLeadFormPage({ showToast }) {
   function showChatServices() {
     setChatMessages((current) => [
       ...current,
-      { role: "user", content: "View Services" },
-      { role: "assistant", content: `Here are our services:\n\n${SERVICE_KNOWLEDGE.map((item) => `- ${item.name}`).join("\n")}\n\nWhich service are you looking for?` },
+      { role: "user", content: "View services" },
+      { role: "assistant", content: `Here are our services:\n\n${SERVICE_KNOWLEDGE.map((item) => `- ${item.name}`).join("\n")}\n\nWhich one are you interested in?` },
     ]);
   }
 
@@ -480,155 +480,196 @@ export default function PublicLeadFormPage({ showToast }) {
 
   return (
     <main className="public-site min-h-screen bg-emerald-50 text-gray-900">
-      <section id="home" className="bg-emerald-800 text-white">
-        <div className="mx-auto grid max-w-7xl gap-12 px-4 py-14 md:px-8 md:py-20 lg:min-h-[610px] lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div className="relative z-10">
-            <div className="mb-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-emerald-100">
-              <CalendarCheck size={18} />
-              Book a dental consultation
-            </div>
-            <h1 className="max-w-2xl font-serif text-5xl font-bold leading-[1.05] md:text-6xl">
-              Best Dental Clinic in Islamabad
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-emerald-50">
+      <header className="sticky top-0 z-30 border-b border-[#cbe5c1] bg-[#dff4d7]/90 backdrop-blur">
+        <div className="mx-auto flex max-w-[1260px] items-center justify-between gap-6 px-4 py-3 md:px-8">
+          <a href="#home" className="flex items-center gap-2.5 text-[#152019]">
+            <BrandMark />
+            <span className="whitespace-nowrap text-[17px] font-bold tracking-tight">BrightSmile<span className="max-sm:hidden"> Dental Center</span></span>
+          </a>
+          <nav className="hidden items-center gap-7 text-sm font-medium text-[#3a4840] md:flex" aria-label="Page sections">
+            {navLinks.map((link) => (
+              <a key={link.href} href={link.href} className="transition hover:text-[#087f5b]">
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <a href="#contact" className="whitespace-nowrap rounded-full bg-[#1d1f1c] px-4 py-2 text-sm font-semibold text-[#fff] transition hover:bg-[#343832]">
+            Book a visit
+          </a>
+        </div>
+      </header>
+
+      <section id="home" className="bg-[#dff4d7]">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-14 pt-10 md:px-8 md:pb-20 md:pt-14 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-14">
+          <div>
+            <h1 className="max-w-xl text-[2.75rem] leading-[1.03] text-[#152019] sm:text-6xl">Best Dental Clinic in Islamabad</h1>
+            <p className="mt-6 max-w-lg text-lg leading-8 text-[#3a4840]">
               Trusted, comfortable dental care for families across Islamabad. From routine checkups to smile restoration, our team makes every visit clear and reassuring.
             </p>
-            <a className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-white px-6 py-3.5 font-bold text-emerald-800 shadow-lg transition hover:bg-emerald-50" href="#contact">
-              Book an Appointment <ArrowRight size={18} />
-            </a>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <a className="inline-flex items-center gap-2 rounded-full bg-[#1d1f1c] px-6 py-3.5 text-[15px] font-semibold text-[#fff] transition hover:bg-[#343832]" href="#contact">
+                Book an appointment
+              </a>
+              <button type="button" className="inline-flex items-center gap-2 rounded-full border border-[#a9cf9d] bg-[#f4fbf1] px-5 py-3.5 text-[15px] font-semibold text-[#152019] transition hover:border-[#72b65b] hover:bg-[#fff]" onClick={openVoice}>
+                <AudioLines size={18} /> Talk to reception
+              </button>
+              <button type="button" className="inline-flex items-center gap-2 rounded-full border border-[#a9cf9d] bg-[#f4fbf1] px-5 py-3.5 text-[15px] font-semibold text-[#152019] transition hover:border-[#72b65b] hover:bg-[#fff]" onClick={openChat}>
+                <MessageCircle size={18} /> Chat
+              </button>
+            </div>
+            <dl className="mt-10 grid max-w-lg grid-cols-3 border-t border-[#b9dcae] pt-6">
+              {stats.map((stat) => (
+                <div key={stat.label} className="flex flex-col-reverse border-l border-[#b9dcae] px-4 first:border-l-0 first:pl-0">
+                  <dt className="mt-1 text-sm leading-5 text-[#3a4840]">{stat.label}</dt>
+                  <dd className="text-3xl font-bold tracking-tight text-[#152019]">{stat.value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[590px] py-5">
-            <div className="absolute inset-0 m-auto h-[92%] w-[92%] rounded-full border-2 border-dashed border-emerald-200/80" />
-            <div className="relative mx-auto aspect-square w-[88%] overflow-hidden rounded-full border-[10px] border-white/15 shadow-2xl">
-              <img
-                className="h-full w-full object-cover"
-                src="/images/brightsmile-dental-hero.png"
-                alt="Dentist consulting with a patient at BrightSmile Dental Center in Islamabad"
-              />
-            </div>
-            <div className="absolute left-0 top-8 flex h-28 w-28 flex-col items-center justify-center rounded-full border-4 border-emerald-800 bg-emerald-100 text-center text-emerald-900 shadow-xl sm:h-32 sm:w-32">
-              <Sparkles size={24} />
-              <span className="mt-1 text-sm font-bold leading-tight">Modern Smile Care</span>
-            </div>
-            <div className="absolute bottom-8 right-0 rounded-lg border border-emerald-100 bg-white p-4 text-gray-900 shadow-xl sm:right-3">
-              <div className="flex items-center gap-3">
-                <CalendarCheck className="text-emerald-700" size={24} />
-                <div>
-                  <p className="font-bold">Easy appointment booking</p>
-                  <p className="text-sm text-gray-500">Quick follow-up from our care team</p>
-                </div>
+          <div className="relative">
+            <img
+              className="aspect-[5/4] w-full rounded-[28px] object-cover shadow-[0_24px_60px_rgba(38,61,43,0.18)]"
+              src="/images/brightsmile-dental-hero.png"
+              alt="Dentist consulting with a patient at BrightSmile Dental Center in Islamabad"
+            />
+            <div className="absolute bottom-4 left-4 flex items-center gap-3 rounded-2xl bg-[#fff] px-4 py-3 shadow-[0_10px_30px_rgba(23,27,24,0.14)]">
+              <Clock className="text-[#087f5b]" size={20} />
+              <div>
+                <p className="text-sm font-semibold text-[#171b18]">Open Monday to Friday</p>
+                <p className="text-xs text-[#68726b]">9 AM to 5 PM, Islamabad</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section aria-label="Clinic achievements" className="border-b border-emerald-100 bg-white">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-9 sm:grid-cols-3 md:px-8 md:py-11">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <div key={stat.label} className="flex items-center justify-center gap-4 sm:justify-start">
-                <Icon className="shrink-0 text-emerald-600" size={44} strokeWidth={1.7} />
-                <div>
-                  <p className="font-serif text-4xl font-bold leading-none text-emerald-800">{stat.value}</p>
-                  <p className="mt-2 text-sm font-semibold text-gray-500">{stat.label}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section id="services" className="bg-white py-16 md:py-24">
+      <section id="services" className="scroll-mt-16 bg-white py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <div className="max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">Our services</p>
-            <h2 className="mt-3 text-3xl font-bold text-gray-950 md:text-4xl">Complete dental care in one place</h2>
-            <p className="mt-4 text-gray-600">Choose the service you are interested in and we will help you plan the next step.</p>
+            <h2 className="text-3xl text-[#171b18] md:text-[2.6rem] md:leading-[1.08]">Complete dental care in one place</h2>
+            <p className="mt-4 text-lg leading-8 text-[#55605a]">Pick a treatment to start a consultation request. Not sure what you need? Reception can point you to the right one.</p>
           </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {serviceCards.map((service) => {
-              const Icon = service.icon;
-              return (
-                <div key={service.title} className="rounded-lg border border-emerald-100 bg-white p-5 transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg">
-                  <Icon className="text-emerald-600" size={30} strokeWidth={1.7} />
-                  <h3 className="mt-4 font-serif text-xl font-bold text-emerald-900">{service.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-gray-600">{service.text}</p>
-                </div>
-              );
-            })}
+          <div className="mt-12 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+            {serviceGroups.map((group) => (
+              <div key={group.title}>
+                <h3 className="text-lg text-[#171b18]">{group.title}</h3>
+                <p className="mt-1 text-sm leading-5 text-[#68726b]">{group.note}</p>
+                <ul className="mt-4 border-t border-[#e2ebe0]">
+                  {group.items.map((item) => (
+                    <li key={item.name} className="border-b border-[#e2ebe0]">
+                      <button type="button" className="group flex w-full items-start justify-between gap-3 py-3.5 text-left" onClick={() => chooseService(item.name)}>
+                        <span>
+                          <span className="block font-semibold text-[#171b18] transition group-hover:text-[#087f5b]">{item.name}</span>
+                          <span className="mt-0.5 block text-sm leading-6 text-[#68726b]">{item.text}</span>
+                        </span>
+                        <ArrowRight size={16} className="mt-1 shrink-0 text-[#b6c2b8] transition group-hover:translate-x-0.5 group-hover:text-[#087f5b]" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section id="results" className="border-y border-emerald-100 bg-emerald-50 py-16 md:py-24">
+      <section id="results" className="scroll-mt-16 border-y border-emerald-100 bg-emerald-50 py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">Realistic smile outcomes</p>
-            <h2 className="mt-3 text-3xl font-bold text-gray-950 md:text-4xl">Before &amp; After</h2>
-            <p className="mt-4 text-gray-600">See how thoughtful treatment planning can improve smile health, balance, and confidence.</p>
+          <div className="max-w-2xl">
+            <h2 className="text-3xl text-[#171b18] md:text-[2.6rem] md:leading-[1.08]">Before and after</h2>
+            <p className="mt-4 text-lg leading-8 text-[#55605a]">See how thoughtful treatment planning can improve smile health, balance, and confidence.</p>
           </div>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {smileResults.map((result) => (
-              <article key={result.title} className="overflow-hidden rounded-lg border border-emerald-100 bg-white shadow-sm">
+              <article key={result.title} className="overflow-hidden rounded-lg border border-emerald-100 bg-white">
                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                   <img className="h-full w-full object-cover" src={result.image} alt={`${result.title} illustrative before and after smile result`} />
-                  <span className="absolute left-3 top-3 rounded-md bg-gray-950/85 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">Before</span>
-                  <span className="absolute bottom-3 left-3 rounded-md bg-emerald-700 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">After</span>
+                  <span className="absolute left-3 top-3 rounded-full bg-[#171b18]/85 px-3 py-1 text-xs font-semibold text-[#fff]">Before</span>
+                  <span className="absolute bottom-3 left-3 rounded-full bg-[#087f5b] px-3 py-1 text-xs font-semibold text-[#fff]">After</span>
                 </div>
                 <div className="p-5">
-                  <h3 className="font-serif text-xl font-bold text-emerald-900">{result.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-gray-600">{result.description}</p>
+                  <h3 className="text-xl text-[#171b18]">{result.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#55605a]">{result.description}</p>
                 </div>
               </article>
             ))}
           </div>
 
-          <p className="mt-6 text-center text-xs leading-5 text-gray-500">Illustrative treatment examples. Individual needs and results vary after clinical assessment.</p>
+          <p className="mt-6 text-xs leading-5 text-[#68726b]">Illustrative treatment examples. Individual needs and results vary after clinical assessment.</p>
         </div>
       </section>
 
-      <section id="reviews" className="bg-white py-16 md:py-24">
+      <section id="reviews" className="scroll-mt-16 bg-white py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">Patient stories</p>
-              <h2 className="mt-3 text-3xl font-bold text-gray-950 md:text-4xl">A smoother way to start dental care</h2>
-            </div>
-            <div className="flex text-amber-400">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <Star key={index} fill="currentColor" size={20} />
-              ))}
+            <h2 className="max-w-xl text-3xl text-[#171b18] md:text-[2.6rem] md:leading-[1.08]">A smoother way to start dental care</h2>
+            <div className="flex items-center gap-2.5 text-sm text-[#55605a]">
+              <span className="flex text-[#e0a100]" aria-label="Five stars">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Star key={index} fill="currentColor" size={18} />
+                ))}
+              </span>
+              From recent patients
             </div>
           </div>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {testimonials.map((item) => (
-              <div key={item.name} className="rounded-lg border border-emerald-100 bg-white p-6 shadow-soft">
-                <p className="leading-7 text-gray-600">"{item.text}"</p>
-                <p className="mt-5 font-bold text-gray-900">{item.name}</p>
-              </div>
+              <figure key={item.name} className="flex flex-col justify-between rounded-2xl bg-[#f2f8ef] p-7">
+                <blockquote className="text-[17px] leading-8 text-[#242a25]">“{item.text}”</blockquote>
+                <figcaption className="mt-6 flex items-center gap-3 text-sm font-semibold text-[#171b18]">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff] text-[#087f5b]">{item.name[0]}</span>
+                  {item.name}
+                </figcaption>
+              </figure>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="contact" className="py-16 md:py-24">
-        <div className="mx-auto max-w-3xl px-4 md:px-8">
-          <div className="w-full">
+      <section id="contact" className="scroll-mt-16 border-t border-[#e2ebe0] py-16 md:py-24">
+        <div className="mx-auto grid max-w-7xl gap-12 px-4 md:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+          <div>
+            <h2 className="text-3xl text-[#171b18] md:text-[2.6rem] md:leading-[1.08]">Request a consultation</h2>
+            <p className="mt-4 text-lg leading-8 text-[#55605a]">Tell us what you need and the reception team will call you to agree a time.</p>
+            <ol className="mt-8 space-y-5">
+              {bookingSteps.map((step, index) => (
+                <li key={step.title} className="flex gap-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#dff4d7] text-sm font-bold text-[#087f5b]">{index + 1}</span>
+                  <div>
+                    <p className="font-semibold text-[#171b18]">{step.title}</p>
+                    <p className="mt-0.5 text-sm leading-6 text-[#68726b]">{step.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <ul className="mt-9 space-y-3 border-t border-[#e2ebe0] pt-7 text-[15px] text-[#3a4840]">
+              <li className="flex items-center gap-3"><Clock size={18} className="shrink-0 text-[#087f5b]" /> Monday to Friday, 9 AM to 5 PM</li>
+              <li className="flex items-center gap-3"><Mail size={18} className="shrink-0 text-[#087f5b]" /> hello@brightsmiledentalcenter.com</li>
+              <li className="flex items-center gap-3"><MapPin size={18} className="shrink-0 text-[#087f5b]" /> Islamabad, Pakistan</li>
+            </ul>
+          </div>
+
+          <div>
             {submitted && (
-              <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
-                <p className="font-semibold">Thank you. Your inquiry was received successfully.</p>
-                <p className="mt-1 text-sm">A clinic representative will reach out shortly.</p>
+              <div className="mb-4 flex items-start gap-3 rounded-2xl bg-[#eff8eb] p-4 text-[#087f5b]">
+                <Check size={20} strokeWidth={2.5} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold">We received your request.</p>
+                  <p className="mt-0.5 text-sm text-[#3a4840]">Reception will call you during clinic hours to agree a time.</p>
+                </div>
               </div>
             )}
             <LeadForm
+              key={selectedService}
               onSubmit={handleSubmit}
               loading={loading}
-              submitLabel="Request Consultation"
+              submitLabel="Request consultation"
+              notesLabel="Anything we should know?"
+              placeholders={{ name: "Your full name", phone: "0300 1234567", email: "you@example.com", notes: "Preferred day or time, or what is bothering you" }}
               initialValues={{
+                service: selectedService,
                 source: "Website Form",
                 sourceDetail: "Dental clinic website form"
               }}
@@ -637,13 +678,13 @@ export default function PublicLeadFormPage({ showToast }) {
         </div>
       </section>
 
-      <footer className="bg-gray-950 py-10 text-white">
+      <footer className="bg-gray-950 pb-24 pt-10 text-white md:pb-12">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 md:flex-row md:items-center md:justify-between md:px-8">
           <div>
             <p className="text-xl font-bold">BrightSmile Dental Center</p>
             <p className="mt-2 text-sm text-gray-400">Modern dental consultations and friendly follow-up care.</p>
           </div>
-          <div className="flex flex-col gap-2 text-sm text-gray-300 sm:flex-row sm:gap-6">
+          <div className="flex flex-col gap-2 text-sm text-gray-300 sm:flex-row sm:gap-6 md:pr-52">
             <span>hello@brightsmiledentalcenter.com</span>
             <span>Islamabad, Pakistan</span>
             <span>Mon to Fri, 9 AM to 5 PM</span>
@@ -651,44 +692,14 @@ export default function PublicLeadFormPage({ showToast }) {
         </div>
       </footer>
 
-      <div className="assistant-dock fixed bottom-5 right-5 z-40">
-        <div className="assistant-dock__copy">
-          <span className="assistant-dock__eyebrow">Need a hand?</span>
-          <span className="assistant-dock__hint">Our team is here</span>
-        </div>
-        <div className="assistant-dock__actions">
-        <LauncherButton
-          icon={PhoneCall}
-          label="Talk"
-          tone="voice"
-          active={voiceOpen}
-          ariaLabel={voiceOpen ? "Close voice assistant" : "Open voice assistant"}
-          onClick={() => {
-            if (voiceOpen) {
-              handleCloseVoicePanel();
-              return;
-            }
-            setVoiceOpen(true);
-            setChatOpen(false);
-          }}
-        />
-        <LauncherButton
-          icon={MessagesSquare}
-          label="Chat"
-          tone="chat"
-          active={chatOpen}
-          ariaLabel={chatOpen ? "Close chat" : "Open chat"}
-          onClick={() => {
-            if (!chatOpen) handleCloseVoicePanel();
-            setChatOpen((value) => !value);
-          }}
-        />
-        </div>
+      <div className="fixed bottom-4 right-4 z-40 flex items-center gap-1 rounded-full border border-[#dce9d7] bg-white p-1.5 shadow-[0_10px_30px_rgba(23,27,24,0.16)] sm:bottom-5 sm:right-5">
+        <LauncherButton icon={AudioLines} label="Talk" active={voiceOpen} ariaLabel={voiceOpen ? "Close voice assistant" : "Open voice assistant"} onClick={() => (voiceOpen ? handleCloseVoicePanel() : openVoice())} />
+        <LauncherButton icon={MessageCircle} label="Chat" active={chatOpen} ariaLabel={chatOpen ? "Close chat" : "Open chat"} onClick={() => (chatOpen ? setChatOpen(false) : openChat())} />
       </div>
 
       {voiceOpen && (
         <FloatingPanel
-          icon={PhoneCall}
+          icon={AudioLines}
           title="Talk to the clinic"
           subtitle={voiceCallActive ? "On a call now" : "Voice call in your browser"}
           live={voiceCallActive}
@@ -738,7 +749,13 @@ export default function PublicLeadFormPage({ showToast }) {
       )}
 
       {chatOpen && (
-        <FloatingPanel icon={MessagesSquare} title="Chat with the clinic" subtitle="Usually replies in a few seconds" onClose={() => setChatOpen(false)}>
+        <FloatingPanel
+          icon={MessageCircle}
+          title="Chat with the clinic"
+          subtitle="Usually replies in a few seconds"
+          onClose={() => setChatOpen(false)}
+          action={chatMessages.length > 1 ? { icon: RotateCcw, label: "Start a new chat", onClick: resetChat } : null}
+        >
           <div className="flex h-full min-h-0 flex-col">
             <div ref={chatScrollRef} className="app-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4">
               {chatMessages.map((message, index) => (
@@ -807,6 +824,9 @@ export default function PublicLeadFormPage({ showToast }) {
                     <button type="button" className="rounded-full border border-[#dce9d7] bg-white px-3 py-1.5 text-[13px] font-medium text-[#263229] transition hover:border-[#8ec879] hover:bg-[#eff8eb]" onClick={showChatServices}>
                       View services
                     </button>
+                    <button type="button" className="rounded-full border border-[#dce9d7] bg-white px-3 py-1.5 text-[13px] font-medium text-[#263229] transition hover:border-[#8ec879] hover:bg-[#eff8eb] disabled:opacity-50" disabled={chatLoading} onClick={() => sendChatMessage("What are your clinic hours?")}>
+                      Clinic hours
+                    </button>
                   </div>
                 )}
                 <form className="flex items-center gap-2 rounded-2xl border border-[#dce5d8] bg-white py-1.5 pl-3.5 pr-1.5 transition focus-within:border-[#72b65b] focus-within:shadow-[0_0_0_4px_rgba(186,255,152,0.35)]" onSubmit={handleChatSubmit}>
@@ -830,16 +850,27 @@ export default function PublicLeadFormPage({ showToast }) {
   );
 }
 
-function LauncherButton({ icon: Icon, label, tone, active, ariaLabel, onClick }) {
+function BrandMark() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+      <rect width="30" height="30" rx="9" fill="#1d1f1c" />
+      <path d="M8.5 13.5c1.6 4.4 4 6.4 6.5 6.4s4.9-2 6.5-6.4" fill="none" stroke="#baff98" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function LauncherButton({ icon: Icon, label, active, ariaLabel, onClick }) {
   return (
     <button
-      className={`assistant-dock__button assistant-dock__button--${tone} ${active ? "is-active" : ""}`}
+      className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#72b65b] ${
+        active ? "bg-[#1d1f1c] text-white" : "text-[#263229] hover:bg-[#eff8eb]"
+      }`}
       onClick={onClick}
       aria-label={ariaLabel}
       aria-pressed={active}
     >
-      <span className="assistant-dock__icon"><Icon size={17} strokeWidth={2.2} /></span>
-      <span>{label}</span>
+      <Icon size={18} strokeWidth={2.1} />
+      {label}
     </button>
   );
 }
@@ -859,7 +890,7 @@ function VoiceBars({ active, connecting, small }) {
   );
 }
 
-function FloatingPanel({ icon: Icon, title, subtitle, live = false, children, onClose }) {
+function FloatingPanel({ icon: Icon, title, subtitle, live = false, action = null, children, onClose }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -867,11 +898,11 @@ function FloatingPanel({ icon: Icon, title, subtitle, live = false, children, on
       className={`flex flex-col overflow-hidden border-[#e2ebe0] bg-white transition-[width,transform] duration-300 ease-out ${
         expanded
           ? "fixed inset-y-0 right-0 z-50 w-[25vw] min-w-[340px] max-w-[520px] border-l shadow-[0_0_48px_rgba(23,27,24,0.16)] max-sm:w-full"
-          : "fixed bottom-24 right-5 z-40 h-[min(600px,calc(100vh-7.5rem))] w-[calc(100vw-2rem)] max-w-[460px] rounded-[20px] border shadow-[0_18px_50px_rgba(23,27,24,0.16)]"
+          : "fixed bottom-[5.25rem] right-4 z-40 h-[min(620px,calc(100vh-6.5rem))] w-[calc(100vw-2rem)] max-w-[420px] rounded-[20px] border shadow-[0_18px_50px_rgba(23,27,24,0.16)] sm:right-5"
       }`}
     >
-      <div className="assistant-panel__header flex shrink-0 items-center gap-3 border-b border-[#edf1ea] px-4 py-3.5">
-        <div className="assistant-panel__icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#dff4d7] text-[#087f5b]">
+      <div className="flex shrink-0 items-center gap-3 border-b border-[#edf1ea] px-4 py-3.5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#dff4d7] text-[#087f5b]">
           <Icon size={19} strokeWidth={2.1} />
         </div>
         <div className="min-w-0 flex-1">
@@ -881,6 +912,11 @@ function FloatingPanel({ icon: Icon, title, subtitle, live = false, children, on
             {subtitle}
           </p>
         </div>
+        {action && (
+          <button className="rounded-lg p-2 text-[#68726b] transition hover:bg-[#f3f7f0] hover:text-[#171b18]" onClick={action.onClick} aria-label={action.label} title={action.label}>
+            <action.icon size={16} />
+          </button>
+        )}
         <button
           className="rounded-lg p-2 text-[#68726b] transition hover:bg-[#f3f7f0] hover:text-[#171b18] max-sm:hidden"
           onClick={() => setExpanded((value) => !value)}
