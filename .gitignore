@@ -4,6 +4,7 @@ dist/
 .env.local
 backend/.env
 frontend/.env
+client_secret_*.json
 backend/data/
 __pycache__/
 *.py[cod]

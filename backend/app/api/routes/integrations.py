@@ -1,12 +1,15 @@
 import hashlib
 import hmac
+import html
 import json
 import re
 import time
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from app.core.config import settings
+from app.services.email_service import connect_gmail, gmail_api_is_configured, gmail_authorization_url, take_pending_gmail_token, verify_oauth_state
 from app.schemas.chatbot import ChatbotLeadCreate
 from app.schemas.leads import LeadCreate
 from app.schemas.voice import FollowupVoiceCallCreate, VoiceLeadCreate
@@ -223,6 +226,51 @@ async def retell_webhook_handler(
     if result.pop("newLeadCreated", False) and saved_lead:
         background_tasks.add_task(dispatch_automatic_followup, saved_lead)
     return result
+
+
+def gmail_redirect_uri(request: Request) -> str:
+    # Render terminates TLS in front of the app, so the public scheme comes from the proxy header.
+    scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
+    return f"{scheme}://{request.headers['host']}/api/integrations/gmail/callback"
+
+
+def gmail_result_page(title: str, detail: str, status_code: int = 200) -> HTMLResponse:
+    page = (
+        "<!doctype html><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>"
+        f"<title>{html.escape(title)}</title>"
+        "<body style='margin:0;display:grid;place-items:center;min-height:100vh;background:#dff4d7;font-family:Inter,system-ui,sans-serif;color:#171b18'>"
+        "<main style='max-width:26rem;margin:1rem;padding:2rem;border-radius:20px;background:#fff'>"
+        f"<h1 style='margin:0 0 .5rem;font-size:1.4rem'>{html.escape(title)}</h1>"
+        f"<p style='margin:0;line-height:1.6;color:#55605a'>{html.escape(detail)}</p></main></body>"
+    )
+    return HTMLResponse(page, status_code=status_code)
+
+
+@router.get("/gmail/connect")
+async def gmail_connect_handler(request: Request, key: str | None = None):
+    require_integration_key(key)
+    return RedirectResponse(gmail_authorization_url(gmail_redirect_uri(request)))
+
+
+@router.get("/gmail/callback")
+async def gmail_callback_handler(request: Request, code: str = "", state: str = "", error: str = ""):
+    if error or not code:
+        return gmail_result_page("Gmail was not connected", f"Google returned: {error or 'no authorization code'}.", 400)
+    if not verify_oauth_state(state):
+        return gmail_result_page("Gmail was not connected", "This sign-in link has expired. Start again from the connect link.", 400)
+    try:
+        await connect_gmail(code, gmail_redirect_uri(request))
+    except HTTPException as exc:
+        detail = exc.detail.get("message") if isinstance(exc.detail, dict) else str(exc.detail)
+        return gmail_result_page("Gmail was not connected", detail, exc.status_code)
+    return gmail_result_page("Gmail is connected", "Follow-up emails will now be sent from this account. You can close this tab.")
+
+
+@router.post("/gmail/pending-token")
+async def gmail_pending_token_handler(x_integration_key: str | None = Header(default=None)):
+    """Hand the newly issued refresh token over once so it can be stored as GMAIL_REFRESH_TOKEN."""
+    require_integration_key(x_integration_key)
+    return {"refreshToken": take_pending_gmail_token(), "connected": gmail_api_is_configured()}
 
 
 @router.post("/voice-agent/followup-call", status_code=201)

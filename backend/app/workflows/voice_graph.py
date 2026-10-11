@@ -149,7 +149,11 @@ async def prepare_voice_agent_input(state: VoiceState):
     }
     agent_input = (
         "Extract one dental lead from this Retell voice call. Return ONLY valid JSON text with no markdown. "
-        "If email is missing, leadComplete must be false and missingFields must include email.\n\n"
+        "If email is missing, leadComplete must be false and missingFields must include email.\n"
+        "Callers spell emails and say phone numbers aloud, so rebuild the written value: join spelled letters, "
+        "\"double t\" is tt, number words become digits, \"at\" is @, \"dot\" is a full stop, and filler words are dropped. "
+        "When the agent read a value back and the caller confirmed it, use that confirmed value over the caller's first attempt. "
+        "Write the phone as digits only, with a leading + if the caller gave a country code.\n\n"
         f"Allowed service values (use the exact name):\n{service_names_text()}\n\n"
         f"Known structured data:\n{json.dumps(known)}\n\n"
         f"Call summary:\n{call['callSummary']}\n\n"

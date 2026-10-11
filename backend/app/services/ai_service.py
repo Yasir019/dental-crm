@@ -12,7 +12,9 @@ async def generate_followup_template(name: str, service: str):
         f"Generate a polite dental clinic follow-up email for a patient named {name} "
         f"who showed interest in {service}. The email should be professional, friendly, "
         "and short. Do not provide medical advice or diagnosis. Ask the patient to reply "
-        "with their preferred appointment time. Return JSON with subject and body."
+        "with their preferred appointment time. Mention that the clinic is open Monday to Friday, 9 AM to 5 PM. "
+        f"Sign off exactly as: Best regards, {settings.dental_clinic_name}. Never use placeholders such as [Your Name]. "
+        "Return JSON with subject and body."
     )
 
     async with httpx.AsyncClient(timeout=30) as client:
