@@ -165,6 +165,8 @@ const initialChatMessages = [
   }
 ];
 const VOICE_CALL_CONNECT_TIMEOUT_MS = 15000;
+const CHAT_MEMORY_KEY = "brightsmile-chat-memory-v1";
+const MAX_CHAT_MESSAGES = 50;
 
 function getErrorMessage(error, fallback = "Something went wrong. Please try again.") {
   if (error instanceof Error && error.message) return error.message;
@@ -214,8 +216,20 @@ export default function PublicLeadFormPage({ showToast }) {
   const [voiceTranscript, setVoiceTranscript] = useState("");
   const [voiceError, setVoiceError] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
-  const [chatSessionId] = useState(createChatSessionId);
-  const [chatMessages, setChatMessages] = useState(initialChatMessages);
+  const [chatSessionId] = useState(() => {
+    const saved = window.localStorage.getItem(`${CHAT_MEMORY_KEY}:session`);
+    const sessionId = saved || createChatSessionId();
+    window.localStorage.setItem(`${CHAT_MEMORY_KEY}:session`, sessionId);
+    return sessionId;
+  });
+  const [chatMessages, setChatMessages] = useState(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(`${CHAT_MEMORY_KEY}:messages`) || "null");
+      return Array.isArray(saved) && saved.length ? saved.slice(-MAX_CHAT_MESSAGES) : initialChatMessages;
+    } catch {
+      return initialChatMessages;
+    }
+  });
   const [chatInput, setChatInput] = useState("");
   const [chatLeadCaptured, setChatLeadCaptured] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
@@ -235,6 +249,10 @@ export default function PublicLeadFormPage({ showToast }) {
   useEffect(() => {
     chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight });
   }, [chatMessages, chatLoading, chatOpen]);
+
+  useEffect(() => {
+    window.localStorage.setItem(`${CHAT_MEMORY_KEY}:messages`, JSON.stringify(chatMessages.slice(-MAX_CHAT_MESSAGES)));
+  }, [chatMessages]);
 
   useEffect(() => {
     voiceScrollRef.current?.scrollTo({ top: voiceScrollRef.current.scrollHeight });
@@ -388,7 +406,7 @@ export default function PublicLeadFormPage({ showToast }) {
         sessionId: chatSessionId,
         message,
         pageUrl: window.location.href,
-        history: nextMessages.slice(-12),
+        history: nextMessages.slice(-MAX_CHAT_MESSAGES),
         serviceCatalog: SERVICE_KNOWLEDGE
       });
 

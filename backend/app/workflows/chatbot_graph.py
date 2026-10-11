@@ -17,6 +17,7 @@ from app.workflows.llm import LLMError, chat_completion, parse_json_object
 
 
 REQUIRED_FIELDS = ["service", "name", "email", "phone"]
+MAX_CHAT_HISTORY = 50
 FIELD_QUESTIONS = {
     "service": "What service are you looking for?",
     "name": "May I have your full name, please?",
@@ -92,23 +93,54 @@ def clean_agent_reply(value: str) -> str:
     return reply
 
 
+def infer_known_from_history(history: list[dict]) -> dict:
+    """Recover deterministic fields when a session resumes after a process restart."""
+    known = {field: "" for field in REQUIRED_FIELDS}
+    for index, item in enumerate(history):
+        content = str(item.get("content") or "").strip()
+        if not content:
+            continue
+        if not known["service"]:
+            known["service"] = match_service(content)
+            if not known["service"]:
+                for service in SERVICES:
+                    if service.lower() in content.lower():
+                        known["service"] = service
+                        break
+        if not known["email"]:
+            email_match = MESSAGE_PATTERNS["email"].search(content)
+            if email_match:
+                known["email"] = email_match.group(0)
+        if not known["phone"]:
+            phone_match = MESSAGE_PATTERNS["phone"].search(content)
+            if phone_match:
+                known["phone"] = clean_lead_fields({"phone": phone_match.group(0)})["phone"]
+        if not known["name"] and index > 0 and item.get("role") == "user":
+            previous = str(history[index - 1].get("content") or "").lower()
+            if "full name" in previous or "your name" in previous:
+                known["name"] = content[:120]
+    return known
+
+
 async def normalize_incoming(state: ChatbotState):
     history = [
         {"role": item.get("role"), "content": (item.get("content") or "").strip()}
         for item in (state.get("history") or [])
         if isinstance(item, dict) and item.get("role") in {"user", "assistant"} and (item.get("content") or "").strip()
     ]
+    remembered = infer_known_from_history(history)
+    remembered.update({field: value for field, value in (state.get("known") or {}).items() if value})
     return {
         "sessionId": state.get("sessionId") or "anonymous",
         "message": (state.get("message") or "").strip(),
         "pageUrl": state.get("pageUrl") or "",
         "history": history,
-        "known": state.get("known") or {},
+        "known": remembered,
     }
 
 
 async def prepare_agent_input(state: ChatbotState):
-    history_text = "\n".join(f"{item['role']}: {item['content']}" for item in state["history"][-12:])
+    history_text = "\n".join(f"{item['role']}: {item['content']}" for item in state["history"][-MAX_CHAT_HISTORY:])
     known = state["known"]
     known_text = "\n".join(f"- {field}: {known.get(field) or '(missing)'}" for field in REQUIRED_FIELDS)
     agent_input = (
@@ -128,7 +160,9 @@ async def prepare_agent_input(state: ChatbotState):
         "(for example a cavity or filling is Dental Fillings, braces is Orthodontics).\n"
         "6. Never invent a name, email, or phone. Leave a field empty only when the visitor has not provided it.\n"
         "7. Ask only for the first field that is still missing. Never ask again for a field you already have.\n"
-        "8. Return ONLY valid JSON text. Do not use markdown. Do not wrap in code fences.\n"
+        "8. Treat the collected fields and full conversation history as durable memory. Never reset the name, service, email, or phone after the visitor provides it.\n"
+        "9. Reply naturally to the visitor's latest message. If they ask how to book, continue the current lead flow instead of greeting them as a new visitor.\n"
+        "10. Return ONLY valid JSON text. Do not use markdown, debugging labels, lead state text, or code fences.\n"
         'JSON shape: {"reply":"string","lead":{"name":"","phone":"","email":"","service":"","notes":""},'
         '"leadComplete":false,"missingFields":["service","name","email","phone"]}'
     )
@@ -140,7 +174,11 @@ async def dental_lead_agent(state: ChatbotState):
     system = (
         f"You are the {settings.dental_clinic_name} website AI agent. Return only valid JSON text. "
         "Collect service, then name, then email, then phone one at a time. If normal greeting, greet and ask "
-        "what service they are looking for. When all fields are collected, reply that our team will follow back soon.\n"
+        "what service they are looking for. Use the full conversation history as memory: preserve every "
+        "field already supplied, continue the current lead instead of restarting, and answer the latest "
+        "question directly. When all fields are collected, reply that our team will follow back soon. "
+        "The reply value must contain only natural user-facing text; never include lead state, JSON, markdown, "
+        "debugging notes, or code fences inside it.\n"
         f"{CLINIC_CONTEXT}"
         "Services (the lead service must be one of these exact names):\n"
         f"{service_catalog_text()}\n"
@@ -200,7 +238,7 @@ def has_complete_lead(state: ChatbotState):
 
 async def create_crm_lead(state: ChatbotState):
     lead_data = state["lead"]
-    transcript_text = "\n".join(f"{item['role']}: {item['content']}" for item in state["transcript"][-12:])
+    transcript_text = "\n".join(f"{item['role']}: {item['content']}" for item in state["transcript"][-MAX_CHAT_HISTORY:])
     try:
         lead = await create_lead(
             {

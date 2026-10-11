@@ -2,7 +2,7 @@ from fastapi import HTTPException
 
 from app.core.config import settings
 from app.db.supabase import supabase_request
-from app.services.email_service import email_is_configured, send_email
+from app.services.email_service import email_is_configured, send_followup_email
 from app.services.leads_service import get_lead, update_lead_followup
 from app.services.retell_service import create_retell_phone_call
 from app.services.utils import pick_first
@@ -131,7 +131,7 @@ async def send_lead_email(lead_id: str, subject: str, body: str, mode: str):
         raise HTTPException(status_code=400, detail={"message": "Email subject and body are required."})
     activity = await create_activity(lead_id, "email", mode, subject.strip(), body.strip())
     try:
-        result = await send_email(lead["email"], subject.strip(), body.strip())
+        result = await send_followup_email(lead["email"], subject.strip(), body.strip())
         reference = result.get("id") or ""
         activity = await update_activity(activity["id"], "sent", reference)
         lead = await refresh_lead_followup_status(lead_id)
