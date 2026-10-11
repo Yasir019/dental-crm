@@ -32,10 +32,10 @@ async def lead_followup_activities_handler(lead_id: str, user=Depends(require_au
 @router.post("/leads/{lead_id}/email")
 async def manual_lead_email_handler(lead_id: str, payload: LeadEmailRequest, user=Depends(require_auth)):
     result = await queue_lead_email(lead_id, payload.subject, payload.body, "manual")
-    return {"message": "Email sent through the n8n workflow.", **result}
+    return {"message": "Email sent.", **result}
 
 
 @router.post("/leads/{lead_id}/callback")
 async def manual_lead_callback_handler(lead_id: str, user=Depends(require_auth)):
     result = await queue_lead_callback(lead_id, "manual")
-    return {"message": "AI callback started through the n8n workflow.", **result}
+    return {"message": "AI callback started.", **result}

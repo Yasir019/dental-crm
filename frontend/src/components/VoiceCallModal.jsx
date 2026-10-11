@@ -114,10 +114,12 @@ export default function VoiceCallModal({ lead, callType = "lead_capture", callId
               )}
 
               {activeTab === "Transcript" && (
-                <div className="mt-5 rounded-lg border border-gray-100 bg-gray-50 p-4">
+                <div className="mt-5 rounded-lg border border-gray-100 bg-white p-4">
                   {transcriptLines.length ? (
                     <div className="space-y-3">
-                      {transcriptLines.map((message, index) => <ConversationMessage key={`${message.role}-${index}`} {...message} compact />)}
+                      {transcriptLines.map((message, index) => (
+                        <ConversationMessage key={`${message.role}-${index}`} {...message} speakerLabel={index === 0 || transcriptLines[index - 1].role !== message.role} />
+                      ))}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">No transcript saved for this call.</p>

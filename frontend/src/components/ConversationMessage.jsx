@@ -1,5 +1,3 @@
-import { Bot, UserRound } from "lucide-react";
-
 const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const phonePattern = /(?:\+?\d[\d\s().-]{7,}\d)/g;
 const namePattern = /\b(?:my name is|name is|this is)\s+([A-Za-z][A-Za-z'-]*(?:\s+[A-Za-z][A-Za-z'-]*){0,2})/i;
@@ -60,7 +58,7 @@ export function renderContactHighlights(text) {
   uniqueMatches.forEach((match) => {
     if (match.start > cursor) fragments.push(value.slice(cursor, match.start));
     fragments.push(
-      <mark key={`${match.type}-${match.start}`} className="rounded-md bg-emerald-200 px-1.5 py-0.5 font-semibold text-emerald-950 ring-1 ring-emerald-300">
+      <mark key={`${match.type}-${match.start}`} className="bg-transparent font-semibold text-inherit underline decoration-[#72b65b] decoration-2 underline-offset-[3px]">
         {match.value}
       </mark>,
     );
@@ -70,38 +68,25 @@ export function renderContactHighlights(text) {
   return fragments;
 }
 
-export default function ConversationMessage({ role = "assistant", content, compact = false, flat = false }) {
+export default function ConversationMessage({ role = "assistant", content, typing = false, speakerLabel = false }) {
   const isUser = role === "user";
-  if (flat) {
-    return (
-      <div className={`flex items-start gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}>
-        <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isUser ? "bg-emerald-100 text-emerald-700" : "bg-gray-900 text-white"}`}>
-          {isUser ? <UserRound size={12} /> : <Bot size={12} />}
-        </div>
-        <div className={`min-w-0 max-w-[88%] ${isUser ? "text-right" : "text-left"}`}>
-          <p className={`mb-0.5 text-[10px] font-bold uppercase tracking-wide ${isUser ? "text-emerald-700" : "text-gray-500"}`}>
-            {isUser ? "You" : "AI Receptionist"}
-          </p>
-          <p className="whitespace-pre-line text-sm leading-6 text-gray-700">{renderContactHighlights(content)}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div className={`flex max-w-[88%] items-end gap-2 ${isUser ? "flex-row-reverse" : ""}`}>
-        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${isUser ? "bg-emerald-100 text-emerald-700" : "bg-gray-900 text-white"}`}>
-          {isUser ? <UserRound size={14} /> : <Bot size={14} />}
-        </div>
-        <div>
-          <p className={`mb-1 text-[11px] font-bold uppercase tracking-wide ${isUser ? "text-right text-emerald-700" : "text-gray-500"}`}>
-            {isUser ? "You" : "AI Receptionist"}
-          </p>
-          <div className={`whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-sm leading-6 shadow-sm ${compact ? "rounded-xl" : ""} ${isUser ? "rounded-br-md bg-emerald-600 text-white" : "rounded-bl-md border border-gray-200 bg-white text-gray-700"}`}>
-            {renderContactHighlights(content)}
-          </div>
-        </div>
+    <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}>
+      {speakerLabel && <p className="mb-1 px-1 text-xs font-medium text-[#68726b]">{isUser ? "Patient" : "Receptionist"}</p>}
+      <div
+        className={`max-w-[85%] whitespace-pre-line break-words px-3.5 py-2.5 text-sm leading-6 ${
+          isUser ? "rounded-[18px] rounded-br-md bg-[#1d1f1c] text-white" : "rounded-[18px] rounded-bl-md bg-[#f1f6ee] text-[#242a25]"
+        }`}
+      >
+        {typing ? (
+          <span className="typing-dots flex h-6 items-center gap-1" role="status" aria-label="Writing a reply">
+            <span />
+            <span />
+            <span />
+          </span>
+        ) : (
+          renderContactHighlights(content)
+        )}
       </div>
     </div>
   );

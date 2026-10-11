@@ -435,6 +435,50 @@ textarea {
   background-color: #343832 !important;
 }
 
+/* Voice and chat assistant */
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #8a938c;
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.voice-bars-live span {
+  transform-origin: center;
+  animation: voice-bar 0.9s ease-in-out infinite;
+}
+
+.voice-bars-wait span {
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.35; }
+  30% { opacity: 1; }
+}
+
+@keyframes voice-bar {
+  0%, 100% { transform: scaleY(0.45); }
+  50% { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-dots span,
+  .voice-bars-live span,
+  .voice-bars-wait span {
+    animation: none;
+  }
+}
+
 @layer components {
   .form-input {
     @apply w-full rounded-lg border border-emerald-100 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-50;

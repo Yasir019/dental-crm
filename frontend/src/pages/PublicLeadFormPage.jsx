@@ -2,17 +2,20 @@ import {
   Activity,
   AlignCenter,
   ArrowRight,
+  ArrowUp,
+  AudioLines,
   Baby,
-  Bot,
   CalendarCheck,
+  Check,
   CircleDot,
   Crown,
   HeartHandshake,
   HeartPulse,
   Maximize2,
-  Mic,
+  MessageCircle,
   Minimize2,
   Phone,
+  PhoneOff,
   ScanFace,
   ShieldPlus,
   ShieldCheck,
@@ -199,6 +202,8 @@ function createChatSessionId() {
 export default function PublicLeadFormPage({ showToast }) {
   const retellClientRef = useRef(null);
   const callActiveRef = useRef(false);
+  const chatScrollRef = useRef(null);
+  const voiceScrollRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -225,6 +230,14 @@ export default function PublicLeadFormPage({ showToast }) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight });
+  }, [chatMessages, chatLoading, chatOpen]);
+
+  useEffect(() => {
+    voiceScrollRef.current?.scrollTo({ top: voiceScrollRef.current.scrollHeight });
+  }, [voiceTranscript]);
 
   function getRetellClient() {
     if (retellClientRef.current) return retellClientRef.current;
@@ -619,139 +632,170 @@ export default function PublicLeadFormPage({ showToast }) {
         </div>
       </footer>
 
-      <div className="fixed bottom-5 right-5 z-40 flex flex-col gap-3">
-        <button
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg transition hover:scale-105 hover:bg-emerald-700"
+      <div className="fixed bottom-5 right-5 z-40 flex items-center gap-1 rounded-full border border-[#dce9d7] bg-white p-1.5 shadow-[0_10px_30px_rgba(23,27,24,0.14)]">
+        <LauncherButton
+          icon={AudioLines}
+          label="Talk"
+          active={voiceOpen}
+          ariaLabel={voiceOpen ? "Close voice assistant" : "Open voice assistant"}
           onClick={() => {
+            if (voiceOpen) {
+              handleCloseVoicePanel();
+              return;
+            }
             setVoiceOpen(true);
             setChatOpen(false);
           }}
-          aria-label="Open voice assistant"
-        >
-          <Mic size={24} />
-        </button>
-        <button
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-950 text-white shadow-lg transition hover:scale-105 hover:bg-gray-800"
+        />
+        <LauncherButton
+          icon={MessageCircle}
+          label="Chat"
+          active={chatOpen}
+          ariaLabel={chatOpen ? "Close chat" : "Open chat"}
           onClick={() => {
-            setChatOpen(true);
-            setVoiceOpen(false);
+            if (!chatOpen) handleCloseVoicePanel();
+            setChatOpen((value) => !value);
           }}
-          aria-label="Open chatbot"
-        >
-          <Bot size={24} />
-        </button>
+        />
       </div>
 
       {voiceOpen && (
-        <FloatingPanel title="AI Voice Assistant" onClose={handleCloseVoicePanel}>
-          <div className="flex h-full min-h-0 flex-col rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <div className="flex items-center gap-3">
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${voiceCallActive ? "bg-emerald-500" : voiceConnecting ? "bg-amber-400" : "bg-gray-300"}`} />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{voiceCallActive ? "Live conversation" : voiceConnecting ? "Connecting" : "Voice assistant"}</p>
-                  <p className="text-sm font-semibold text-gray-800">{voiceStatus}</p>
-                </div>
+        <FloatingPanel
+          icon={AudioLines}
+          title="Talk to the clinic"
+          subtitle={voiceCallActive ? "On a call now" : "Voice call in your browser"}
+          live={voiceCallActive}
+          onClose={handleCloseVoicePanel}
+        >
+          <div className="flex h-full min-h-0 flex-col">
+            <div className={voiceTranscript ? "flex items-center gap-3 px-4 py-3" : "flex flex-1 flex-col items-center justify-center px-6 text-center"}>
+              <VoiceBars active={voiceCallActive} connecting={voiceConnecting} small={Boolean(voiceTranscript)} />
+              <div className={voiceTranscript ? "min-w-0" : "mt-5"}>
+                <p className="text-[15px] font-semibold text-[#171b18]">
+                  {voiceCallActive ? "You're on the call" : voiceConnecting ? "Connecting" : "Speak with our receptionist"}
+                </p>
+                <p className="mt-0.5 text-sm leading-5 text-[#68726b]">{voiceStatus}</p>
               </div>
-              {voiceError && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{voiceError}</p>}
-              {voiceTranscript && (
-                <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto border-t border-gray-200 pt-4">
-                  {parseConversationTranscript(voiceTranscript).map((message, index) => (
-                    <ConversationMessage key={`${message.role}-${index}`} {...message} flat />
-                  ))}
-                </div>
-              )}
+            </div>
 
-            {voiceCallActive ? (
-              <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 font-bold text-white hover:bg-red-700" onClick={handleStopVoiceCall}>
-                End Call <Phone size={18} />
-              </button>
-            ) : (
-              <button
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={handleStartVoiceCall}
-                disabled={voiceConnecting}
-              >
-                {voiceConnecting ? "Starting..." : "Start Voice Call"} <Phone size={18} />
-              </button>
+            {voiceError && <p className="mx-4 mb-3 rounded-xl bg-red-50 px-3 py-2.5 text-sm leading-5 text-red-700">{voiceError}</p>}
+
+            {voiceTranscript && (
+              <div ref={voiceScrollRef} className="app-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto border-t border-[#edf1ea] px-4 py-4">
+                {parseConversationTranscript(voiceTranscript).map((message, index) => (
+                  <ConversationMessage key={`${message.role}-${index}`} {...message} />
+                ))}
+              </div>
             )}
+
+            <div className="border-t border-[#edf1ea] p-3">
+              {voiceCallActive ? (
+                <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#c8372d] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#ab2c23]" onClick={handleStopVoiceCall}>
+                  <PhoneOff size={17} /> End call
+                </button>
+              ) : (
+                <button
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1d1f1c] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#343832] disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={handleStartVoiceCall}
+                  disabled={voiceConnecting}
+                >
+                  <Phone size={17} /> {voiceConnecting ? "Connecting" : "Start call"}
+                </button>
+              )}
+              {!voiceCallActive && !voiceConnecting && (
+                <p className="mt-2 text-center text-xs text-[#8a938c]">Your browser will ask to use the microphone.</p>
+              )}
+            </div>
           </div>
         </FloatingPanel>
       )}
 
       {chatOpen && (
-        <FloatingPanel title="Dental Chat Assistant" onClose={() => setChatOpen(false)}>
-          <div className="flex h-full min-h-0 flex-col gap-3">
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-lg bg-gray-50 p-3">
+        <FloatingPanel icon={MessageCircle} title="Chat with the clinic" subtitle="Usually replies in a few seconds" onClose={() => setChatOpen(false)}>
+          <div className="flex h-full min-h-0 flex-col">
+            <div ref={chatScrollRef} className="app-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4">
               {chatMessages.map((message, index) => (
-                <ConversationMessage key={`${message.role}-${index}`} role={message.role} content={message.content} compact />
+                <ConversationMessage key={`${message.role}-${index}`} role={message.role} content={message.content} />
               ))}
-              {chatLoading && (
-                <ConversationMessage content="Thinking..." compact />
-              )}
+              {chatLoading && <ConversationMessage typing />}
             </div>
 
-            {!chatBookingOpen && !chatLeadCaptured && (
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-3 text-sm font-bold text-white hover:bg-emerald-700" onClick={() => setChatBookingOpen(true)}>
-                  <CalendarCheck size={16} /> Book an Appointment
-                </button>
-                <button type="button" className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50" onClick={showChatServices}>
-                  <Stethoscope size={16} /> View Services
-                </button>
-              </div>
-            )}
-
             {chatBookingOpen && (
-              <form className="grid gap-2 rounded-lg border border-emerald-100 bg-emerald-50 p-3" onSubmit={handleChatBooking}>
-                <p className="text-sm font-bold text-emerald-900">Book an appointment</p>
-                <p className="text-xs leading-5 text-emerald-800">Choose a future Monday-Friday slot. Clinic hours are 9:00 AM-5:00 PM, and each appointment is 30 minutes.</p>
-                <input className="form-input" required placeholder="Full name" value={chatBooking.name} onChange={(event) => setChatBooking((current) => ({ ...current, name: event.target.value }))} />
-                <input className="form-input" required type="email" placeholder="Email address" value={chatBooking.email} onChange={(event) => setChatBooking((current) => ({ ...current, email: event.target.value }))} />
-                <input className="form-input" required placeholder="Phone number" value={chatBooking.phone} onChange={(event) => setChatBooking((current) => ({ ...current, phone: event.target.value }))} />
-                <select className="form-input" required value={chatBooking.service} onChange={(event) => setChatBooking((current) => ({ ...current, service: event.target.value }))}>
-                  <option value="">Select a service</option>
-                  {SERVICE_KNOWLEDGE.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
-                </select>
-                <label className="text-xs font-semibold text-gray-600">Date
-                  <input className="form-input mt-1" required type="date" min={new Date().toISOString().slice(0, 10)} value={chatBooking.scheduledDate} onChange={(event) => setChatBooking((current) => ({ ...current, scheduledDate: event.target.value }))} />
-                </label>
-                <label className="text-xs font-semibold text-gray-600">Available time
-                  <select className="form-input mt-1" required value={chatBooking.scheduledTime} onChange={(event) => setChatBooking((current) => ({ ...current, scheduledTime: event.target.value }))}>
-                    <option value="">Select a time</option>
-                    {Array.from({ length: 16 }, (_, index) => {
-                      const hour = 9 + Math.floor(index / 2);
-                      const minute = index % 2 ? "30" : "00";
-                      const value = `${String(hour).padStart(2, "0")}:${minute}`;
-                      const label = `${hour > 12 ? hour - 12 : hour}:${minute} ${hour >= 12 ? "PM" : "AM"}`;
-                      return <option key={value} value={value}>{label}</option>;
-                    })}
-                  </select>
-                </label>
-                {chatBookingError && <p className="rounded-lg bg-red-50 p-2 text-xs font-semibold leading-5 text-red-700">{chatBookingError}</p>}
-                <div className="flex gap-2">
-                  <button type="button" className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-700" onClick={() => setChatBookingOpen(false)}>Cancel</button>
-                  <button className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={chatBookingLoading}>{chatBookingLoading ? "Booking..." : "Confirm Booking"}</button>
+              <form className="app-scrollbar max-h-[62%] shrink-0 overflow-y-auto border-t border-[#edf1ea] px-4 py-4" onSubmit={handleChatBooking}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[15px] font-semibold text-[#171b18]">Book an appointment</p>
+                    <p className="mt-0.5 text-xs leading-5 text-[#68726b]">Monday to Friday, 9 AM to 5 PM. Visits are 30 minutes.</p>
+                  </div>
+                  <button type="button" className="rounded-lg p-1.5 text-[#68726b] transition hover:bg-[#f3f7f0] hover:text-[#171b18]" onClick={() => setChatBookingOpen(false)} aria-label="Cancel booking">
+                    <X size={17} />
+                  </button>
                 </div>
+                <div className="mt-3 grid gap-2">
+                  <input className="form-input" required placeholder="Full name" aria-label="Full name" value={chatBooking.name} onChange={(event) => setChatBooking((current) => ({ ...current, name: event.target.value }))} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input className="form-input" required type="email" placeholder="Email" aria-label="Email address" value={chatBooking.email} onChange={(event) => setChatBooking((current) => ({ ...current, email: event.target.value }))} />
+                    <input className="form-input" required placeholder="Phone" aria-label="Phone number" value={chatBooking.phone} onChange={(event) => setChatBooking((current) => ({ ...current, phone: event.target.value }))} />
+                  </div>
+                  <select className="form-input" required aria-label="Service" value={chatBooking.service} onChange={(event) => setChatBooking((current) => ({ ...current, service: event.target.value }))}>
+                    <option value="">Select a service</option>
+                    {SERVICE_KNOWLEDGE.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="text-xs font-medium text-[#68726b]">Date
+                      <input className="form-input mt-1" required type="date" min={new Date().toISOString().slice(0, 10)} value={chatBooking.scheduledDate} onChange={(event) => setChatBooking((current) => ({ ...current, scheduledDate: event.target.value }))} />
+                    </label>
+                    <label className="text-xs font-medium text-[#68726b]">Time
+                      <select className="form-input mt-1" required value={chatBooking.scheduledTime} onChange={(event) => setChatBooking((current) => ({ ...current, scheduledTime: event.target.value }))}>
+                        <option value="">Select a time</option>
+                        {Array.from({ length: 16 }, (_, index) => {
+                          const hour = 9 + Math.floor(index / 2);
+                          const minute = index % 2 ? "30" : "00";
+                          const value = `${String(hour).padStart(2, "0")}:${minute}`;
+                          const label = `${hour > 12 ? hour - 12 : hour}:${minute} ${hour >= 12 ? "PM" : "AM"}`;
+                          return <option key={value} value={value}>{label}</option>;
+                        })}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+                {chatBookingError && <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs leading-5 text-red-700">{chatBookingError}</p>}
+                <button className="mt-3 w-full rounded-xl bg-[#1d1f1c] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#343832] disabled:opacity-60" disabled={chatBookingLoading}>
+                  {chatBookingLoading ? "Booking" : "Confirm booking"}
+                </button>
               </form>
             )}
 
-            {chatLeadCaptured && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
-                Your details were captured. The clinic team will follow up soon.
+            {!chatBookingOpen && (
+              <div className="shrink-0 border-t border-[#edf1ea] p-3">
+                {chatLeadCaptured ? (
+                  <p className="mb-2.5 flex items-center gap-2 px-1 text-sm text-[#087f5b]">
+                    <Check size={16} strokeWidth={2.5} /> We have your details. The clinic team will follow up soon.
+                  </p>
+                ) : (
+                  <div className="mb-2.5 flex flex-wrap gap-1.5">
+                    <button type="button" className="rounded-full border border-[#dce9d7] bg-white px-3 py-1.5 text-[13px] font-medium text-[#263229] transition hover:border-[#8ec879] hover:bg-[#eff8eb]" onClick={() => setChatBookingOpen(true)}>
+                      Book an appointment
+                    </button>
+                    <button type="button" className="rounded-full border border-[#dce9d7] bg-white px-3 py-1.5 text-[13px] font-medium text-[#263229] transition hover:border-[#8ec879] hover:bg-[#eff8eb]" onClick={showChatServices}>
+                      View services
+                    </button>
+                  </div>
+                )}
+                <form className="flex items-center gap-2 rounded-2xl border border-[#dce5d8] bg-white py-1.5 pl-3.5 pr-1.5 transition focus-within:border-[#72b65b] focus-within:shadow-[0_0_0_4px_rgba(186,255,152,0.35)]" onSubmit={handleChatSubmit}>
+                  <input
+                    className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-[#242a25] outline-none placeholder:text-[#9aa39c]"
+                    placeholder="Write a message"
+                    aria-label="Message"
+                    value={chatInput}
+                    onChange={(event) => setChatInput(event.target.value)}
+                  />
+                  <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1d1f1c] text-white transition hover:bg-[#343832] disabled:bg-[#e6ebe3] disabled:text-[#9aa39c]" disabled={chatLoading || !chatInput.trim()} aria-label="Send message">
+                    <ArrowUp size={18} strokeWidth={2.4} />
+                  </button>
+                </form>
               </div>
             )}
-
-            <form className="flex gap-2" onSubmit={handleChatSubmit}>
-              <input
-                className="form-input"
-                placeholder="Type your question..."
-                value={chatInput}
-                onChange={(event) => setChatInput(event.target.value)}
-              />
-              <button className="rounded-lg bg-emerald-600 px-4 font-bold text-white hover:bg-emerald-700 disabled:opacity-60" disabled={chatLoading || !chatInput.trim()}>
-                Send
-              </button>
-            </form>
           </div>
         </FloatingPanel>
       )}
@@ -759,34 +803,72 @@ export default function PublicLeadFormPage({ showToast }) {
   );
 }
 
-function FloatingPanel({ title, children, onClose }) {
+function LauncherButton({ icon: Icon, label, active, ariaLabel, onClick }) {
+  return (
+    <button
+      className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+        active ? "bg-[#1d1f1c] text-white" : "text-[#263229] hover:bg-[#eff8eb]"
+      }`}
+      onClick={onClick}
+      aria-label={ariaLabel}
+      aria-pressed={active}
+    >
+      <Icon size={18} strokeWidth={2.1} />
+      {label}
+    </button>
+  );
+}
+
+function VoiceBars({ active, connecting, small }) {
+  return (
+    <div
+      className={`voice-bars flex shrink-0 items-center justify-center gap-[3px] rounded-full ${small ? "h-11 w-11" : "h-24 w-24 gap-[5px]"} ${
+        active ? "voice-bars-live bg-[#1d1f1c] text-[#baff98]" : connecting ? "voice-bars-wait bg-[#eff8eb] text-[#087f5b]" : "bg-[#eff8eb] text-[#087f5b]"
+      }`}
+      aria-hidden="true"
+    >
+      {[0.45, 0.8, 1, 0.65, 0.4].map((height, index) => (
+        <span key={index} className={`rounded-full bg-current ${small ? "w-[3px]" : "w-[5px]"}`} style={{ height: `${height * (small ? 18 : 40)}px`, animationDelay: `${index * 0.12}s` }} />
+      ))}
+    </div>
+  );
+}
+
+function FloatingPanel({ icon: Icon, title, subtitle, live = false, children, onClose }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <div
-      className={`flex flex-col border-emerald-100 bg-white transition-[width,transform] duration-300 ease-out ${
+      className={`flex flex-col overflow-hidden border-[#e2ebe0] bg-white transition-[width,transform] duration-300 ease-out ${
         expanded
-          ? "fixed inset-y-0 right-0 z-50 w-[25vw] min-w-[320px] max-w-[520px] border-l shadow-2xl max-sm:w-full"
-          : "fixed bottom-36 right-5 z-40 max-h-[calc(100vh-10rem)] w-[calc(100vw-2.5rem)] max-w-sm rounded-lg border shadow-soft"
+          ? "fixed inset-y-0 right-0 z-50 w-[25vw] min-w-[340px] max-w-[520px] border-l shadow-[0_0_48px_rgba(23,27,24,0.16)] max-sm:w-full"
+          : "fixed bottom-24 right-5 z-40 h-[min(600px,calc(100vh-7.5rem))] w-[calc(100vw-2.5rem)] max-w-[380px] rounded-[20px] border shadow-[0_18px_50px_rgba(23,27,24,0.16)]"
       }`}
     >
-      <div className="flex shrink-0 items-center justify-between border-b border-emerald-100 px-5 py-4">
-        <h3 className="font-bold text-gray-900">{title}</h3>
-        <div className="flex items-center gap-1">
-          <button
-            className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
-            onClick={() => setExpanded((value) => !value)}
-            aria-label={expanded ? "Restore panel size" : "Expand panel"}
-            title={expanded ? "Restore panel size" : "Expand panel"}
-          >
-            {expanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-          </button>
-          <button className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900" onClick={onClose} aria-label="Close panel" title="Close">
-            <X size={19} />
-          </button>
+      <div className="flex shrink-0 items-center gap-3 border-b border-[#edf1ea] px-4 py-3.5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#dff4d7] text-[#087f5b]">
+          <Icon size={19} strokeWidth={2.1} />
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-semibold text-[#171b18]">{title}</p>
+          <p className="flex items-center gap-1.5 truncate text-xs text-[#68726b]">
+            {live && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#c8372d]" />}
+            {subtitle}
+          </p>
+        </div>
+        <button
+          className="rounded-lg p-2 text-[#68726b] transition hover:bg-[#f3f7f0] hover:text-[#171b18] max-sm:hidden"
+          onClick={() => setExpanded((value) => !value)}
+          aria-label={expanded ? "Restore panel size" : "Expand panel"}
+          title={expanded ? "Restore panel size" : "Expand panel"}
+        >
+          {expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+        </button>
+        <button className="rounded-lg p-2 text-[#68726b] transition hover:bg-[#f3f7f0] hover:text-[#171b18]" onClick={onClose} aria-label="Close panel" title="Close">
+          <X size={18} />
+        </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-hidden p-4">{children}</div>
+      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }

@@ -1,0 +1,1532 @@
+{
+  "name": "Dental-CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dental-chatbot-sequential-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "33106885-5456-4a21-8988-8875e69c25bf",
+      "name": "Receive Chat Message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        688
+      ],
+      "webhookId": "5c879dc1-bf48-4016-9823-150e1eb6b462"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst body = item.body || item;\nreturn [{ json: {\n  sessionId: body.sessionId || 'anonymous',\n  message: body.message || '',\n  pageUrl: body.pageUrl || '',\n  history: Array.isArray(body.history) ? body.history : [],\n}}];"
+      },
+      "id": "e88af7ce-606c-4636-8557-22edfd2f960a",
+      "name": "Normalize Incoming",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.first().json;\nconst history = incoming.history || [];\nconst historyText = history.slice(-12).map((msg) => `${msg.role}: ${msg.content}`).join('\\n');\nconst websiteContext = `Clinic name: Pearl Dental Studio.\\nServices: Dental Implants, Teeth Whitening, Braces, Root Canal, Dental Fillings, Bonding.\\nPositioning: Modern, clean, friendly dental clinic for consultation-first dental care.\\nGoal: Help visitors with general service questions and capture leads for staff follow-up.\\nSafety: Do not diagnose, prescribe, guarantee treatment, give emergency medical advice, or replace a dentist consultation. For pain, swelling, bleeding, trauma, fever, or urgent symptoms, advise contacting a dentist or emergency service promptly.`;\nconst agentInput = `Current visitor message: ${incoming.message}\\nPage URL: ${incoming.pageUrl}\\nSession ID: ${incoming.sessionId}\\nConversation history:\\n${historyText}\\nWebsite information:\\n${websiteContext}\\n\\nRequired lead fields in this exact order: service, name, email, phone.\\nConversation rules:\\n1. If user sends a normal greeting or general message, reply with a greeting/answer and end with: What service are you looking for?\\n2. Collect only one missing field at a time. Do not ask for name, email, and phone in one message.\\n3. First identify service. Then ask name. After name ask email. After email ask phone number.\\n4. When service, name, email, and phone are all known, say: Our team will follow back soon.\\n5. Return ONLY valid JSON text. Do not use markdown. Do not call tools. Do not wrap in code fences.\\nJSON shape: {\"reply\":\"string\",\"lead\":{\"name\":\"\",\"phone\":\"\",\"email\":\"\",\"service\":\"\",\"notes\":\"\"},\"leadComplete\":false,\"missingFields\":[\"service\",\"name\",\"email\",\"phone\"]}`;\nreturn [{ json: { ...incoming, agentInput } }];"
+      },
+      "id": "c180d6b5-a2b0-4110-81ba-3f1e6124f187",
+      "name": "Prepare Agent Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.agentInput }}",
+        "options": {
+          "systemMessage": "You are Pearl Dental Studio website AI agent. Return only valid JSON text. Never call tools. Collect service, then name, then email, then phone one at a time. If normal greeting, greet and ask what service they are looking for. When all fields are collected, reply that our team will follow back soon.",
+          "maxIterations": 3
+        }
+      },
+      "id": "3d5c027a-106c-4cbd-917e-cb4e9e8a8e99",
+      "name": "Dental Lead Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        992,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {
+          "maxTokensToSample": 1200,
+          "temperature": 0.2
+        }
+      },
+      "id": "2499251e-8a1a-41b7-9814-cdf2db6de2b9",
+      "name": "Groq Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        944,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $(\"Normalize Incoming\").first().json.sessionId }}",
+        "contextWindowLength": 8
+      },
+      "id": "f096230d-3ad1-4fd6-ac0d-bf611cc27efe",
+      "name": "Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        1104,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Prepare Agent Input').first().json;\nlet raw = $input.first().json.output || '{}';\nif (typeof raw !== 'string') raw = JSON.stringify(raw);\nraw = raw.replace(/```json|```/g, '').trim();\nlet output;\ntry { output = JSON.parse(raw); } catch (error) { output = { reply: 'Hello! What service are you looking for?', lead: {}, leadComplete: false, missingFields: ['service', 'name', 'email', 'phone'] }; }\nconst lead = output.lead || {};\nconst required = ['service', 'name', 'email', 'phone'];\nconst missingFields = required.filter((field) => !String(lead[field] || '').trim());\nconst leadComplete = missingFields.length === 0;\nconst transcript = [...(source.history || []), { role: 'user', content: source.message }, { role: 'assistant', content: output.reply || '' }];\nreturn [{ json: {\n  sessionId: source.sessionId,\n  reply: output.reply || 'Hello! What service are you looking for?',\n  lead: {\n    name: lead.name || '',\n    phone: lead.phone || '',\n    email: lead.email || '',\n    service: lead.service || '',\n    notes: lead.notes || `Website chatbot session ${source.sessionId}`\n  },\n  transcript,\n  leadComplete,\n  leadCaptured: false,\n  missingFields\n}}];"
+      },
+      "id": "0f003eff-6941-44b0-a5c4-110bb5cef0ce",
+      "name": "Normalize Agent Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.leadComplete }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "rightValue": true
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "29f6c44c-29f8-4f91-9f13-5d2705861388",
+      "name": "Has Complete Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1536,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dental-crm-neg8.onrender.com/api/integrations/chatbot/lead",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { sessionId: $json.sessionId, name: $json.lead.name, phone: $json.lead.phone, email: $json.lead.email, service: $json.lead.service, notes: $json.lead.notes, transcript: $json.transcript } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "3faefa06-b621-4473-bc9a-b4cf4a8d5f32",
+      "name": "Create CRM Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1904,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $('Normalize Agent Output').first().json;\nconst created = $input.first().json;\nreturn [{ json: { reply: 'Thank you. Our team will follow back soon.', leadCaptured: true, lead: created.lead || null, missingFields: [] } }];"
+      },
+      "id": "f806b07f-c3f8-4013-9598-b6a24995ce41",
+      "name": "Format Lead Captured Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { reply: $json.reply, leadCaptured: true, lead: $json.lead, missingFields: [] } }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "44970be6-9c76-46bb-8428-9bb977f75e73",
+      "name": "Return Captured Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2400,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { reply: $json.reply, leadCaptured: false, lead: null, missingFields: $json.missingFields || [] } }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "51df0e2c-0ede-48c6-a5b0-13d1f6499eaf",
+      "name": "Return Chat Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1904,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dental-voice-agent-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "d1034a94-5cd2-43b7-a766-8af5dac88194",
+      "name": "Receive Voice Call Analysis",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        256,
+        1840
+      ],
+      "webhookId": "20833b96-ec05-4ae2-bf6d-cabcfa71986b"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);\nconst candidates = [];\nconst seen = new Set();\nconst queue = [item];\nwhile (queue.length) {\n  const value = queue.shift();\n  if (!isObject(value) || seen.has(value)) continue;\n  seen.add(value);\n  candidates.push(value);\n  for (const key of ['body', 'call', 'data']) {\n    if (isObject(value[key])) queue.push(value[key]);\n  }\n}\n\nconst metadataObjects = candidates\n  .map((value) => value.metadata)\n  .filter(isObject);\nconst firstMetadataValue = (key) => {\n  for (const metadata of metadataObjects) {\n    const value = metadata[key];\n    if (value !== undefined && value !== null && String(value).trim() !== '') {\n      return String(value).trim();\n    }\n  }\n  return '';\n};\n\nconst callPurpose = firstMetadataValue('call_purpose');\nconst metadataSource = firstMetadataValue('source');\nconst shouldSkipVoiceLead =\n  callPurpose === 'appointment_booking_callback' ||\n  metadataSource === 'crm_followup_callback';\n\nconst body = isObject(item.body) ? item.body : item;\nconst call = candidates.find((value) =>\n  value.call_id !== undefined ||\n  value.transcript !== undefined ||\n  value.call_analysis !== undefined ||\n  value.from_number !== undefined\n) || body;\nconst analysis = call.call_analysis || body.call_analysis || {};\nconst custom = analysis.custom_analysis_data || call.custom_analysis_data || body.custom_analysis_data || {};\nconst transcript = call.transcript || body.transcript || '';\nconst callerPhone = call.from_number || body.from_number || custom.patient_phone || custom.phone || '';\nconst known = {\n  name: custom.patient_name || custom.name || '',\n  phone: custom.patient_phone || custom.phone || callerPhone,\n  email: custom.patient_email || custom.email || '',\n  service: custom.service || custom.dental_service || '',\n};\nconst websiteContext = 'Clinic name: Pearl Dental Studio. Services: Dental Implants, Teeth Whitening, Braces, Root Canal, Dental Fillings, Bonding. Goal: extract dental lead data from a Retell AI voice call. Required lead fields: name, email, phone, service. Do not save a lead without email.';\nconst agentInput = 'Extract one dental lead from this Retell voice call. Return ONLY valid JSON text with no markdown. Allowed service values: Dental Fillings, Root Canal, Teeth Whitening, Bonding, Dental Implants, Braces. If email is missing, leadComplete must be false and missingFields must include email.\\n\\nKnown structured data:\\n' + JSON.stringify(known) + '\\n\\nCall summary:\\n' + (analysis.call_summary || body.call_summary || '') + '\\n\\nTranscript:\\n' + transcript + '\\n\\nWebsite information:\\n' + websiteContext + '\\n\\nJSON shape: {\"lead\":{\"name\":\"\",\"phone\":\"\",\"email\":\"\",\"service\":\"\",\"notes\":\"\"},\"callSummary\":\"\",\"leadComplete\":false,\"missingFields\":[\"email\"]}';\nreturn [{ json: {\n  agentInput,\n  callPurpose,\n  metadataSource,\n  shouldSkipVoiceLead,\n  rawPayload: body,\n  callId: call.call_id || body.call_id || body.callId || '',\n  fromNumber: call.from_number || body.from_number || '',\n  toNumber: call.to_number || body.to_number || '',\n  callStatus: call.call_status || body.call_status || body.event || '',\n  transcript,\n  recordingUrl: call.recording_url || body.recording_url || '',\n  startedAt: call.start_timestamp ? new Date(call.start_timestamp).toISOString() : (call.started_at || body.started_at || null),\n  endedAt: call.end_timestamp ? new Date(call.end_timestamp).toISOString() : (call.ended_at || body.ended_at || null),\n  durationSeconds: call.duration_ms ? Math.round(call.duration_ms / 1000) : (call.duration_seconds || body.duration_seconds || null),\n  userSentiment: analysis.user_sentiment || '',\n  callSuccessful: analysis.call_successful,\n  customAnalysisData: custom,\n  baseSummary: analysis.call_summary || body.call_summary || ''\n}}];"
+      },
+      "id": "2c75c7dc-7f44-4e81-93b3-a1e6bbe5ffa2",
+      "name": "Prepare Voice Agent Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.agentInput }}",
+        "options": {
+          "systemMessage": "You are Pearl Dental Studio Retell voice lead extraction agent. Return only valid JSON text. Extract name, email, phone, and one allowed dental service from the call. Email is mandatory. If email is missing, leadComplete=false. Never invent email, phone, or service.",
+          "maxIterations": 3
+        }
+      },
+      "id": "663a963e-c834-42e9-98e5-a6bcf576650f",
+      "name": "Voice Lead Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        816,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {
+          "maxTokensToSample": 1200,
+          "temperature": 0.2
+        }
+      },
+      "id": "ba9f0098-10ff-41cd-839c-304f8b652292",
+      "name": "Groq Voice Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        784,
+        2096
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Prepare Voice Agent Input').first().json;\nlet raw = $input.first().json.output || '{}';\nif (typeof raw !== 'string') raw = JSON.stringify(raw);\nraw = raw.replace(/```json|```/g, '').trim();\nlet output;\ntry { output = JSON.parse(raw); } catch (error) { output = { lead: {}, callSummary: source.baseSummary || '', leadComplete: false, missingFields: ['email'] }; }\nconst lead = output.lead || {};\nconst required = ['name', 'phone', 'email', 'service'];\nconst missingFields = required.filter((field) => !String(lead[field] || '').trim());\nconst leadComplete = missingFields.length === 0;\nreturn [{ json: {\n  callId: source.callId,\n  name: lead.name || '',\n  phone: lead.phone || source.fromNumber || '',\n  email: lead.email || '',\n  service: lead.service || '',\n  notes: lead.notes || ('Retell voice call ' + (source.callId || '')),\n  transcript: source.transcript,\n  callSummary: output.callSummary || source.baseSummary || '',\n  recordingUrl: source.recordingUrl,\n  fromNumber: source.fromNumber,\n  toNumber: source.toNumber,\n  callStatus: source.callStatus,\n  durationSeconds: source.durationSeconds,\n  startedAt: source.startedAt,\n  endedAt: source.endedAt,\n  userSentiment: source.userSentiment,\n  callSuccessful: source.callSuccessful,\n  customAnalysisData: source.customAnalysisData,\n  rawPayload: source.rawPayload,\n  leadComplete,\n  missingFields\n}}];"
+      },
+      "id": "d569b49f-dc7c-40e8-a8f5-b4098e92cc50",
+      "name": "Normalize Voice Agent Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "voice-complete",
+              "leftValue": "={{ $json.leadComplete }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "rightValue": true
+            },
+            {
+              "id": "voice-email",
+              "leftValue": "={{ $json.email }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c031ac2a-53e0-44cd-8c72-33175834071d",
+      "name": "Has Voice Lead Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1376,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dental-crm-neg8.onrender.com/api/integrations/voice-agent/lead",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { callId: $json.callId, name: $json.name, phone: $json.phone, email: $json.email, service: $json.service, notes: $json.notes, transcript: $json.transcript, callSummary: $json.callSummary, recordingUrl: $json.recordingUrl, fromNumber: $json.fromNumber, toNumber: $json.toNumber, callStatus: $json.callStatus, durationSeconds: $json.durationSeconds, startedAt: $json.startedAt, endedAt: $json.endedAt, userSentiment: $json.userSentiment, callSuccessful: $json.callSuccessful, customAnalysisData: $json.customAnalysisData, rawPayload: $json.rawPayload } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "77e3fe13-063f-40a9-829e-59defad8164a",
+      "name": "Create CRM Voice Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1664,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, leadSaved: true, message: 'AI voice lead saved to CRM.', lead: $json.lead } }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "7315fe67-93a7-4ca4-a1bc-ce374ea4569e",
+      "name": "Return Voice Lead Saved",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1888,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, leadSaved: false, message: 'Voice lead was not saved because email is missing.', missingFields: $json.missingFields || ['email'] } }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "222692a8-e67f-482c-a9c4-2aeb951ef35f",
+      "name": "Return Voice Lead Missing Email",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1664,
+        1968
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Retell Voice Call Analysis — Inbound Lead Capture / Outbound Follow-up Save\n\n**Trigger:** `Receive Voice Call Analysis`  \n**Webhook purpose:** POST `/webhook/dental-voice-agent-lead` receives Retell `call_analyzed` payloads and returns a JSON acknowledgement.  \n**Lead action:** **Inbound website voice calls can create new CRM leads. Outbound appointment callback analyses save call details to the existing lead and never create a new lead.**  \n**Source labels:** Outbound callback analysis is identified by `call_purpose=appointment_booking_callback` or `source=crm_followup_callback`; its existing CRM lead is identified by `metadata.lead_id`.\n\n1. **Receive Voice Call Analysis** — accepts the Retell analysis payload and waits for a Respond to Webhook node.\n2. **Prepare Voice Agent Input** — preserves the existing inbound website voice-lead preparation and sets `shouldSkipVoiceLead` from callback source labels.\n3. **Is New Voice Lead Call? (IF)** — **true:** process the inbound call as a possible new voice lead; **false:** process the outbound callback analysis as an update to an existing lead.\n4. **Prepare Follow-up Call Details** — false branch robustly unwraps `body`, `data`, and `call` wrappers from the original Retell payload and extracts `metadata.lead_id`, call identifiers, transcript, summary, recording, phone numbers, timing, sentiment, success, custom analysis, and raw payload.\n5. **Save CRM Follow-up Call** — posts the outbound callback analysis to the CRM follow-up-call endpoint using the integration-key header credential; it saves details against the existing lead and does not create a lead.\n6. **Return Follow-up Call Saved** — false-branch HTTP 200 acknowledgement with `received`, `saved`, `leadId`, and `callId`.\n7. **Voice Lead Agent** — true branch extracts name, phone, email, service, and call summary for an inbound lead.\n8. **Groq Voice Model** — supplies the inbound voice extraction agent's inference.\n9. **Normalize Voice Agent Output** — parses extraction output and calculates completeness/missing fields.\n10. **Has Voice Lead Email? (IF)** — **true:** complete inbound lead with email goes to CRM; **false:** do not save the lead.\n11. **Create CRM Voice Lead** — true branch posts the inbound Retell lead, transcript, analysis, and call metadata to CRM.\n12. **Return Voice Lead Saved** — success response (HTTP 200) confirming `leadSaved: true`.\n13. **Return Voice Lead Missing Email** — false response (HTTP 200) confirming `leadSaved: false` and reporting missing email.",
+        "height": 1000,
+        "width": 860,
+        "color": 5
+      },
+      "id": "130055ab-97d9-4a4c-ab3c-e046ef80e53b",
+      "name": "Note — Retell Voice Lead & Callback Skip",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dental-followup-email",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "4e97fdcd-6729-4feb-842a-353f3f2b4c03",
+      "name": "Receive Email Follow-up",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        2864
+      ],
+      "webhookId": "49e52d40-af31-44d4-9b86-6f8d050168f7"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "email-lead-id",
+              "name": "leadId",
+              "value": "={{ $json.body?.leadId ?? $json.leadId ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "email-name",
+              "name": "name",
+              "value": "={{ $json.body?.name ?? $json.name ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "email-address",
+              "name": "email",
+              "value": "={{ $json.body?.email ?? $json.email ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "email-service",
+              "name": "service",
+              "value": "={{ $json.body?.service ?? $json.service ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "email-subject",
+              "name": "subject",
+              "value": "={{ $json.body?.subject ?? $json.subject ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "email-body",
+              "name": "body",
+              "value": "={{ $json.body?.body ?? $json.bodyText ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "email-mode",
+              "name": "mode",
+              "value": "={{ $json.body?.mode ?? $json.mode ?? \"automatic\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "01120bd3-93c5-45da-835d-f9dec75f7073",
+      "name": "Normalize Email Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        2864
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "subject-empty",
+              "leftValue": "={{ $json.subject }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty"
+              }
+            },
+            {
+              "id": "body-empty",
+              "leftValue": "={{ $json.body }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "36f0d1ea-6f77-471d-9fbc-ebc75353d8e0",
+      "name": "Needs AI Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        736,
+        2736
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a short professional dental clinic follow-up email for {{ $json.name }} about {{ $json.service }}.",
+        "options": {
+          "systemMessage": "You write friendly patient follow-up emails for Pearl Dental Studio. Do not diagnose or give medical advice. Thank the patient, mention their requested dental service, explain that the clinic is open Monday to Friday from 9 AM to 5 PM, and ask for a preferred appointment time. Return only the email body.",
+          "maxIterations": 3
+        }
+      },
+      "id": "f355b8b2-73fb-4629-bb02-c42e0f3005a4",
+      "name": "Follow-up Email Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        944,
+        2736
+      ]
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {
+          "maxTokensToSample": 500,
+          "temperature": 0.3
+        }
+      },
+      "id": "fd0223ce-a573-4bcf-b658-d0e261ca260c",
+      "name": "Groq Follow-up Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        944,
+        2912
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "lead-id",
+              "name": "leadId",
+              "value": "={{ $(\"Normalize Email Request\").item.json.leadId }}",
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "name": "subject",
+              "value": "=Following up about your {{ $(\"Normalize Email Request\").item.json.service }} inquiry",
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "name": "body",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "mode",
+              "name": "mode",
+              "value": "={{ $(\"Normalize Email Request\").item.json.mode }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "102ae22e-0e5a-4224-8671-7ab03d7d41fa",
+      "name": "Prepare AI Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1232,
+        2736
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dental-crm-neg8.onrender.com/api/integrations/followup/callback",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { leadId: $json.leadId, mode: $json.mode } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "341554b3-9e82-4be2-a4af-5ce4dc3e31fd",
+      "name": "Start AI Callback Through CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        848,
+        3632
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "content": "## Email Follow-up — Existing Lead\n\n**Trigger:** `Receive Email Follow-up`  \n**Webhook purpose:** authenticated POST `/webhook/dental-followup-email` sends a manual or AI-generated Gmail follow-up.  \n**Lead action:** **Follows up an existing lead; it does not create a new lead.**  \n**Source labels:** Manual/automatic CRM email follow-up; request `mode` is preserved.\n\n1. **Receive Email Follow-up** — accepts the header-authenticated CRM request; response mode is last executed node.\n2. **Normalize Email Request** — standardizes lead ID, patient, email, service, subject, body, and mode.\n3. **Needs AI Email? (IF)** — **true:** missing subject/body uses AI drafting; **false:** supplied content goes directly to Gmail preparation unchanged.\n4. **Follow-up Email Agent** — true branch drafts a concise, non-diagnostic clinic follow-up body.\n5. **Groq Follow-up Model** — supplies the email agent's inference.\n6. **Prepare AI Email** — builds the subject/body and restores lead ID and mode.\n7. **Prepare Gmail Message** — converges both IF branches and prepares normalized delivery/status fields.\n8. **Send Follow-up via Gmail** — sends the message; **success output** records delivery and **error output** records failure.\n9. **Record Gmail Delivery in CRM** — success branch writes sent status/provider reference; as the last node, its output is the webhook success response.\n10. **Record Gmail Failure in CRM** — error branch writes failed status and the provider error to CRM.\n11. **Stop Email Workflow With Error** — terminal error node after failure status is recorded; returns workflow failure instead of a false success.",
+        "height": 850,
+        "width": 820,
+        "color": 4
+      },
+      "id": "3c8ba4b8-9ae8-4692-ad6a-8e7d64b49c17",
+      "name": "Note — Email Follow-up",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        2624
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dental-followup-callback",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "73c3cbb3-5536-4476-87dd-ce8645fc8028",
+      "name": "Receive Callback Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        336,
+        3632
+      ],
+      "webhookId": "3880ba92-93cc-4528-b913-4d1fcc5113b4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "callback-lead-id",
+              "name": "leadId",
+              "value": "={{ $json.body?.leadId ?? $json.leadId ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "callback-name",
+              "name": "name",
+              "value": "={{ $json.body?.name ?? $json.name ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "callback-phone",
+              "name": "phone",
+              "value": "={{ $json.body?.phone ?? $json.phone ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "callback-service",
+              "name": "service",
+              "value": "={{ $json.body?.service ?? $json.service ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "callback-mode",
+              "name": "mode",
+              "value": "={{ $json.body?.mode ?? $json.mode ?? \"automatic\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "72c24fe7-7472-4ec8-96ba-d2f725a44ca6",
+      "name": "Normalize Callback Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        576,
+        3632
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Pearl Dental Studio"
+        }
+      },
+      "id": "a528bb6e-b886-4ab4-b468-77ebbd2819d8",
+      "name": "Send Follow-up via Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        2736
+      ],
+      "webhookId": "a27b3616-65b7-46d8-a5d6-9d66b3f5929d",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "gmail-lead-id",
+              "name": "leadId",
+              "value": "={{ $(\"Normalize Email Request\").item.json.leadId }}",
+              "type": "string"
+            },
+            {
+              "id": "gmail-email",
+              "name": "email",
+              "value": "={{ $(\"Normalize Email Request\").item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "gmail-subject",
+              "name": "subject",
+              "value": "={{ $json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "gmail-body",
+              "name": "body",
+              "value": "={{ $json.body }}",
+              "type": "string"
+            },
+            {
+              "id": "gmail-mode",
+              "name": "mode",
+              "value": "={{ $(\"Normalize Email Request\").item.json.mode }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "87e5b79b-496c-441d-b270-96fe8b35d55b",
+      "name": "Prepare Gmail Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1472,
+        2736
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dental-crm-neg8.onrender.com/api/integrations/followup/email/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { leadId: $(\"Prepare Gmail Message\").item.json.leadId, subject: $(\"Prepare Gmail Message\").item.json.subject, body: $(\"Prepare Gmail Message\").item.json.body, mode: $(\"Prepare Gmail Message\").item.json.mode, status: \"sent\", providerReference: String($json.id ?? $json.messageId ?? $json.threadId ?? \"\"), errorMessage: \"\" } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "eed797e1-19d9-4944-846b-f67839945723",
+      "name": "Record Gmail Delivery in CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1968,
+        2656
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dental-crm-neg8.onrender.com/api/integrations/followup/email/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { leadId: $(\"Prepare Gmail Message\").item.json.leadId, subject: $(\"Prepare Gmail Message\").item.json.subject, body: $(\"Prepare Gmail Message\").item.json.body, mode: $(\"Prepare Gmail Message\").item.json.mode, status: \"failed\", providerReference: \"\", errorMessage: String($json.error?.message ?? $json.message ?? (typeof $json.error === \"string\" ? $json.error : JSON.stringify($json.error ?? \"\"))) } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "57db3c96-e026-45ab-a886-c6df30665288",
+      "name": "Record Gmail Failure in CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1968,
+        2848
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "errorMessage": "=Gmail follow-up delivery failed for lead {{ $(\"Prepare Gmail Message\").item.json.leadId }}. The failure was recorded in CRM."
+      },
+      "id": "6205e1c8-486d-4335-b527-e975da258100",
+      "name": "Stop Email Workflow With Error",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        2848
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "continue-inbound-voice-lead",
+              "leftValue": "={{ $json.shouldSkipVoiceLead }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              },
+              "rightValue": false
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "10a183d3-9000-43a9-96a3-dde0e9e3e11a",
+      "name": "Is New Voice Lead Call?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        816,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { received: true, saved: true, leadId: $('Prepare Follow-up Call Details').first().json.leadId, callId: $('Prepare Follow-up Call Details').first().json.callId } }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "1a978a64-eb1b-470a-a423-10cbd1262d2a",
+      "name": "Return Follow-up Call Saved",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1648,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Website Chatbot — New Lead Capture\n\n**Trigger:** `Receive Chat Message`  \n**Webhook purpose:** POST `/webhook/dental-chatbot-sequential-agent` receives website chat messages and returns conversational replies.  \n**Lead action:** **Captures a new lead** only after service, name, email, and phone are complete.  \n**Source label:** Website chatbot / website session.\n\n1. **Receive Chat Message** — accepts the website chatbot payload and waits for a Respond to Webhook node.\n2. **Normalize Incoming** — standardizes session ID, message, page URL, and recent history.\n3. **Prepare Agent Input** — adds clinic context, safety rules, and ordered lead-field instructions.\n4. **Dental Lead Agent** — answers questions and collects one missing lead field at a time.\n5. **Groq Chat Model** — supplies the agent's language-model inference.\n6. **Chat Memory** — supplies recent session context to the agent.\n7. **Normalize Agent Output** — parses the agent JSON, calculates missing fields, and marks completion.\n8. **Has Complete Lead? (IF)** — **true:** continue to CRM lead creation; **false:** return a normal chat reply without creating a lead.\n9. **Create CRM Lead** — true branch posts the completed website lead and transcript to CRM.\n10. **Format Lead Captured Response** — formats the successful capture reply.\n11. **Return Captured Reply** — success response (HTTP 200) with `leadCaptured: true`.\n12. **Return Chat Reply** — incomplete-lead response (HTTP 200) with `leadCaptured: false` and missing fields.",
+        "height": 950,
+        "width": 788,
+        "color": 3
+      },
+      "id": "ca46f314-679c-4f39-8cbe-fb265a694dfc",
+      "name": "Note — Website Chatbot Lead Capture",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Appointment Callback Follow-up — Existing Lead\n\n**Trigger:** `Receive Callback Request`  \n**Webhook purpose:** authenticated POST `/webhook/dental-followup-callback` starts a Retell appointment-booking callback through CRM.  \n**Lead action:** **Follows up an existing lead; it does not create a new lead.**  \n**Source labels:** The resulting outbound call analysis is labeled `call_purpose=appointment_booking_callback` or `source=crm_followup_callback`.\n\n1. **Receive Callback Request** — accepts the header-authenticated manual/automatic callback request; response mode is last executed node.\n2. **Normalize Callback Request** — standardizes existing lead ID, name, phone, service, and mode.\n3. **Start AI Callback Through CRM** — asks CRM to launch the Retell booking call; its output is the webhook success response, while request failure ends the execution as an error.\n\n**Important:** When the outbound call analysis later reaches `Receive Voice Call Analysis`, it is routed by `Is New Voice Lead Call?` to `Return Callback Analysis Ignored`. **Outbound appointment callback analysis is skipped and must not create a new lead.**",
+        "height": 560,
+        "width": 852,
+        "color": 6
+      },
+      "id": "c579caa0-0528-45c0-a310-bada94277157",
+      "name": "Note — Appointment Callback Follow-up",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        3600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const triggerItem = $('Receive Voice Call Analysis').first().json;\nconst isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);\nconst rawPayload = isObject(triggerItem.body) ? triggerItem.body : triggerItem;\n\nconst candidates = [];\nconst seen = new Set();\nconst queue = [rawPayload];\nwhile (queue.length) {\n  const value = queue.shift();\n  if (!isObject(value) || seen.has(value)) continue;\n  seen.add(value);\n  candidates.push(value);\n  for (const key of ['body', 'data', 'call']) {\n    if (isObject(value[key])) queue.push(value[key]);\n  }\n}\n\nconst firstValue = (keys, sources = candidates) => {\n  for (const key of keys) {\n    for (const source of sources) {\n      if (!isObject(source)) continue;\n      const value = source[key];\n      if (value !== undefined && value !== null && value !== '') return value;\n    }\n  }\n  return undefined;\n};\n\nconst metadataObjects = candidates.map((value) => value.metadata).filter(isObject);\nconst analysisObjects = candidates\n  .map((value) => value.call_analysis || value.callAnalysis)\n  .filter(isObject);\nconst customObjects = [\n  ...analysisObjects.map((value) => value.custom_analysis_data || value.customAnalysisData),\n  ...candidates.map((value) => value.custom_analysis_data || value.customAnalysisData),\n].filter(isObject);\n\nconst metadataValue = (keys) => firstValue(keys, metadataObjects);\nconst analysisValue = (keys) => firstValue(keys, analysisObjects);\nconst customValue = (keys) => firstValue(keys, customObjects);\nconst callValue = (keys) => firstValue(keys, candidates);\n\nconst toIso = (value) => {\n  if (value === undefined || value === null || value === '') return null;\n  if (typeof value === 'number' || /^\\d+(\\.\\d+)?$/.test(String(value))) {\n    const number = Number(value);\n    const milliseconds = number < 100000000000 ? number * 1000 : number;\n    const date = new Date(milliseconds);\n    return Number.isNaN(date.getTime()) ? null : date.toISOString();\n  }\n  const date = new Date(value);\n  return Number.isNaN(date.getTime()) ? value : date.toISOString();\n};\n\nconst fromNumber = callValue(['from_number', 'fromNumber']) || '';\nconst toNumber = callValue(['to_number', 'toNumber']) || '';\nconst startedRaw = callValue(['start_timestamp', 'startTimestamp', 'started_at', 'startedAt']);\nconst endedRaw = callValue(['end_timestamp', 'endTimestamp', 'ended_at', 'endedAt']);\nconst durationMs = callValue(['duration_ms', 'durationMs']);\nconst explicitDurationSeconds = callValue(['duration_seconds', 'durationSeconds']);\nlet durationSeconds = explicitDurationSeconds === undefined ? null : Number(explicitDurationSeconds);\nif (!Number.isFinite(durationSeconds)) durationSeconds = null;\nif (durationSeconds === null && durationMs !== undefined && Number.isFinite(Number(durationMs))) {\n  durationSeconds = Math.round(Number(durationMs) / 1000);\n}\nif (durationSeconds === null && startedRaw !== undefined && endedRaw !== undefined) {\n  const startedMs = new Date(toIso(startedRaw)).getTime();\n  const endedMs = new Date(toIso(endedRaw)).getTime();\n  if (Number.isFinite(startedMs) && Number.isFinite(endedMs) && endedMs >= startedMs) {\n    durationSeconds = Math.round((endedMs - startedMs) / 1000);\n  }\n}\n\nconst successfulRaw = analysisValue(['call_successful', 'callSuccessful']) ?? callValue(['call_successful', 'callSuccessful']);\nlet callSuccessful = successfulRaw;\nif (typeof successfulRaw === 'string') {\n  if (successfulRaw.toLowerCase() === 'true') callSuccessful = true;\n  else if (successfulRaw.toLowerCase() === 'false') callSuccessful = false;\n}\n\nconst customAnalysisData = customObjects[0] || {};\n\nreturn [{ json: {\n  leadId: String(metadataValue(['lead_id', 'leadId']) || ''),\n  callId: String(callValue(['call_id', 'callId']) || ''),\n  phone: String(\n    metadataValue(['patient_phone', 'phone', 'phone_number']) ||\n    customValue(['patient_phone', 'patientPhone', 'phone', 'phone_number']) ||\n    toNumber ||\n    fromNumber ||\n    ''\n  ),\n  transcript: callValue(['transcript']) || '',\n  callSummary: analysisValue(['call_summary', 'callSummary']) ?? callValue(['call_summary', 'callSummary']) ?? '',\n  recordingUrl: callValue(['recording_url', 'recordingUrl']) || '',\n  fromNumber: String(fromNumber),\n  toNumber: String(toNumber),\n  callStatus: String(callValue(['call_status', 'callStatus', 'event']) || ''),\n  durationSeconds,\n  startedAt: toIso(startedRaw),\n  endedAt: toIso(endedRaw),\n  userSentiment: analysisValue(['user_sentiment', 'userSentiment']) ?? callValue(['user_sentiment', 'userSentiment']) ?? '',\n  callSuccessful: callSuccessful ?? null,\n  customAnalysisData,\n  rawPayload,\n} }];"
+      },
+      "id": "2a30224a-2aa9-41e8-acf0-90ca2ef15c7e",
+      "name": "Prepare Follow-up Call Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dental-crm-neg8.onrender.com/api/integrations/voice-agent/followup-call",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { leadId: $json.leadId, callId: $json.callId, phone: $json.phone, transcript: $json.transcript, callSummary: $json.callSummary, recordingUrl: $json.recordingUrl, fromNumber: $json.fromNumber, toNumber: $json.toNumber, callStatus: $json.callStatus, durationSeconds: $json.durationSeconds, startedAt: $json.startedAt, endedAt: $json.endedAt, userSentiment: $json.userSentiment, callSuccessful: $json.callSuccessful, customAnalysisData: $json.customAnalysisData, rawPayload: $json.rawPayload } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "e713976f-f97d-4daa-804a-536105503d2f",
+      "name": "Save CRM Follow-up Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1376,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.evaluationTrigger",
+      "typeVersion": 4.7,
+      "position": [
+        -144,
+        -144
+      ],
+      "id": "f3f1a0fe-87ee-4704-aa41-96f3b6e937f5",
+      "name": "When fetching a dataset row"
+    }
+  ],
+  "pinData": {
+    "Receive Chat Message": [
+      {
+        "json": {
+          "headers": {
+            "host": "airdropshunter.app.n8n.cloud",
+            "user-agent": "python-httpx/0.28.1",
+            "content-length": "1068",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "119.73.103.101",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "PK",
+            "cf-ray": "a18e781fa932dd59-HKG",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "119.73.103.101, 162.158.179.174",
+            "x-forwarded-host": "airdropshunter.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-swc-2-77457444f8-6vhtm",
+            "x-is-trusted": "yes",
+            "x-real-ip": "119.73.103.101"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "sessionId": "488ac53d-842c-41cf-a396-36b71fade08e",
+            "message": "ok",
+            "pageUrl": "http://localhost:5173/",
+            "history": [
+              {
+                "role": "assistant",
+                "content": "Hi! Welcome to Pearl Dental Studio. What service are you looking for?"
+              },
+              {
+                "role": "user",
+                "content": "what type of services you provided"
+              },
+              {
+                "role": "assistant",
+                "content": "We offer a range of dental services including Dental Implants, Teeth Whitening, Braces, Root Canal, Dental Fillings, and Bonding. What service are you looking for?"
+              },
+              {
+                "role": "user",
+                "content": "Iam intrested in Dental Fillings"
+              },
+              {
+                "role": "assistant",
+                "content": "Great! Dental Fillings it is. May I have your name, please?"
+              },
+              {
+                "role": "user",
+                "content": "Yes my name is Yasir"
+              },
+              {
+                "role": "assistant",
+                "content": "Thanks, Yasir. Could you provide your email address?"
+              },
+              {
+                "role": "user",
+                "content": "yasirbhutto@gmail.com"
+              },
+              {
+                "role": "assistant",
+                "content": "Thank you! Lastly, could you share your phone number?"
+              },
+              {
+                "role": "user",
+                "content": "03041529500 my phone number"
+              },
+              {
+                "role": "assistant",
+                "content": "Thanks. Our clinic team will follow up soon."
+              },
+              {
+                "role": "user",
+                "content": "ok"
+              }
+            ]
+          },
+          "webhookUrl": "https://airdropshunter.app.n8n.cloud/webhook/dental-chatbot-sequential-agent",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Receive Chat Message": {
+      "main": [
+        [
+          {
+            "node": "Normalize Incoming",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Incoming": {
+      "main": [
+        [
+          {
+            "node": "Prepare Agent Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Agent Input": {
+      "main": [
+        [
+          {
+            "node": "Dental Lead Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dental Lead Agent": {
+      "main": [
+        [
+          {
+            "node": "Normalize Agent Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Dental Lead Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Dental Lead Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Agent Output": {
+      "main": [
+        [
+          {
+            "node": "Has Complete Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Complete Lead?": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Chat Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Lead": {
+      "main": [
+        [
+          {
+            "node": "Format Lead Captured Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Lead Captured Response": {
+      "main": [
+        [
+          {
+            "node": "Return Captured Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Voice Call Analysis": {
+      "main": [
+        [
+          {
+            "node": "Prepare Voice Agent Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice Lead Agent": {
+      "main": [
+        [
+          {
+            "node": "Normalize Voice Agent Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Voice Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Voice Lead Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Voice Agent Output": {
+      "main": [
+        [
+          {
+            "node": "Has Voice Lead Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Voice Lead Email?": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Voice Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Voice Lead Missing Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Voice Lead": {
+      "main": [
+        [
+          {
+            "node": "Return Voice Lead Saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-up Email Agent": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Follow-up Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Follow-up Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Callback Request": {
+      "main": [
+        [
+          {
+            "node": "Normalize Callback Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Callback Request": {
+      "main": [
+        [
+          {
+            "node": "Start AI Callback Through CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Email Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Normalize Email Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Email Request": {
+      "main": [
+        [
+          {
+            "node": "Needs AI Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs AI Email?": {
+      "main": [
+        [
+          {
+            "node": "Follow-up Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Gmail Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Email": {
+      "main": [
+        [
+          {
+            "node": "Prepare Gmail Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Gmail Message": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-up via Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Follow-up via Gmail": {
+      "main": [
+        [
+          {
+            "node": "Record Gmail Delivery in CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Gmail Failure in CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Gmail Failure in CRM": {
+      "main": [
+        [
+          {
+            "node": "Stop Email Workflow With Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Voice Agent Input": {
+      "main": [
+        [
+          {
+            "node": "Is New Voice Lead Call?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is New Voice Lead Call?": {
+      "main": [
+        [
+          {
+            "node": "Voice Lead Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Follow-up Call Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Follow-up Call Details": {
+      "main": [
+        [
+          {
+            "node": "Save CRM Follow-up Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save CRM Follow-up Call": {
+      "main": [
+        [
+          {
+            "node": "Return Follow-up Call Saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "641993a7-418a-4a35-aacb-9a7038ebf7aa",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6442c7abb482f9c8760fe060dafc9283537cd66f131c0ff1bfc90e0b839b476f"
+  },
+  "nodeGroups": [],
+  "id": "ipRJhFqTYByhBCcI",
+  "tags": []
+}

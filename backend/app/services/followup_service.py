@@ -1,12 +1,12 @@
-import httpx
 from fastapi import HTTPException
 
 from app.core.config import settings
 from app.db.supabase import supabase_request
-from app.services.email_service import send_email
+from app.services.email_service import email_is_configured, send_email
 from app.services.leads_service import get_lead, update_lead_followup
 from app.services.retell_service import create_retell_phone_call
 from app.services.utils import pick_first
+from app.workflows.email_graph import run_email_followup
 
 
 SETTINGS_SELECT = "id,automatic_email_enabled,automatic_callback_enabled,updated_at"
@@ -17,9 +17,10 @@ def normalize_settings(row: dict):
     return {
         "automaticEmailEnabled": bool(row.get("automatic_email_enabled")),
         "automaticCallbackEnabled": bool(row.get("automatic_callback_enabled")),
-        "emailConfigured": bool(settings.n8n_email_webhook_url),
+        "emailConfigured": email_is_configured(),
         "callbackConfigured": bool(settings.retell_api_key and settings.retell_callback_agent_id and settings.retell_phone_number),
-        "workflowConfigured": bool(settings.n8n_email_webhook_url and settings.n8n_callback_webhook_url),
+        # The follow-up workflows run in-process (LangGraph), so there is nothing external to configure.
+        "workflowConfigured": True,
         "updatedAt": row.get("updated_at"),
     }
 
@@ -51,10 +52,8 @@ async def get_followup_settings():
 async def update_followup_settings(data: dict):
     if data["automaticCallbackEnabled"] and not (settings.retell_api_key and settings.retell_callback_agent_id and settings.retell_phone_number):
         raise HTTPException(status_code=400, detail={"message": "Configure Retell API key, agent, and phone number before enabling automatic callback."})
-    if data["automaticEmailEnabled"] and not settings.n8n_email_webhook_url:
-        raise HTTPException(status_code=400, detail={"message": "Configure N8N_EMAIL_WEBHOOK_URL before enabling automatic email."})
-    if data["automaticCallbackEnabled"] and not settings.n8n_callback_webhook_url:
-        raise HTTPException(status_code=400, detail={"message": "Configure N8N_CALLBACK_WEBHOOK_URL before enabling automatic callback."})
+    if data["automaticEmailEnabled"] and not email_is_configured():
+        raise HTTPException(status_code=400, detail={"message": "Configure GMAIL_USER and GMAIL_APP_PASSWORD (or EMAIL_API_KEY and EMAIL_FROM) before enabling automatic email."})
 
     rows = await supabase_request(
         "PATCH",
@@ -177,58 +176,23 @@ async def start_lead_callback(lead_id: str, mode: str):
         raise
 
 
-async def trigger_followup_workflow(url: str | None, payload: dict, label: str):
-    if not url:
-        raise HTTPException(status_code=500, detail={"message": f"{label} workflow is not configured."})
-    headers = {"Content-Type": "application/json"}
-    if settings.integration_api_key:
-        headers["x-integration-key"] = settings.integration_api_key
-    try:
-        async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.post(url, headers=headers, json=payload)
-    except httpx.HTTPError:
-        raise HTTPException(status_code=502, detail={"message": f"Could not reach the n8n {label.lower()} workflow."})
-    if response.status_code >= 400:
-        raise HTTPException(
-            status_code=502,
-            detail={"message": f"The n8n {label.lower()} workflow failed.", "workflowStatus": response.status_code},
-        )
-    try:
-        return response.json()
-    except ValueError:
-        return {"message": f"{label} workflow completed."}
-
-
 async def queue_lead_email(lead_id: str, subject: str, body: str, mode: str):
     lead = await get_lead(lead_id)
-    return await trigger_followup_workflow(
-        settings.n8n_email_webhook_url,
+    return await run_email_followup(
         {
             "leadId": lead_id,
             "name": lead["name"],
             "email": lead["email"],
             "service": lead["service"],
-            "subject": subject.strip(),
-            "body": body.strip(),
+            "subject": subject,
+            "body": body,
             "mode": mode,
-        },
-        "Email",
+        }
     )
 
 
 async def queue_lead_callback(lead_id: str, mode: str):
-    lead = await get_lead(lead_id)
-    return await trigger_followup_workflow(
-        settings.n8n_callback_webhook_url,
-        {
-            "leadId": lead_id,
-            "name": lead["name"],
-            "phone": lead["phone"],
-            "service": lead["service"],
-            "mode": mode,
-        },
-        "Callback",
-    )
+    return await start_lead_callback(lead_id, mode)
 
 
 async def dispatch_automatic_followup(lead: dict):

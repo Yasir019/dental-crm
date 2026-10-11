@@ -1,7 +1,11 @@
+import hashlib
+import hmac
 import json
+import re
+import time
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 from app.core.config import settings
 from app.schemas.chatbot import ChatbotLeadCreate
 from app.schemas.leads import LeadCreate
@@ -10,6 +14,7 @@ from app.schemas.followups import AutomaticLeadCallbackRequest, AutomaticLeadEma
 from app.services.followup_service import dispatch_automatic_followup, record_lead_email_delivery, send_lead_email, start_lead_callback
 from app.services.leads_service import create_lead, create_lead_chat_messages, create_lead_voice_call, get_lead
 from app.utils.validation import validate_lead
+from app.workflows.voice_graph import run_voice_call_analysis
 
 router = APIRouter(prefix="/api/integrations", tags=["integrations"])
 
@@ -181,6 +186,43 @@ async def voice_agent_lead_handler(payload: dict, background_tasks: BackgroundTa
     voice_call = await create_lead_voice_call(lead["id"], voice_payload.model_dump())
     background_tasks.add_task(dispatch_automatic_followup, lead)
     return {"message": "AI voice lead created successfully.", "lead": lead, "voiceCall": voice_call}
+
+
+def verify_retell_signature(raw_body: str, signature: str | None) -> bool:
+    """Retell signs webhooks as "v=<ms timestamp>,d=<hmac-sha256(body + timestamp, api key)>"."""
+    match = re.fullmatch(r"v=(\d+),d=([0-9a-f]+)", signature or "")
+    if not match or not settings.retell_api_key:
+        return False
+    timestamp, digest = match.groups()
+    if abs(time.time() * 1000 - int(timestamp)) > 5 * 60 * 1000:
+        return False
+    expected = hmac.new(settings.retell_api_key.encode(), f"{raw_body}{timestamp}".encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(digest, expected)
+
+
+@router.post("/retell/webhook")
+async def retell_webhook_handler(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    key: str | None = None,
+    x_integration_key: str | None = Header(default=None),
+    x_retell_signature: str | None = Header(default=None),
+):
+    raw_body = (await request.body()).decode("utf-8", errors="replace")
+    integration_key = x_integration_key or key
+    if not (settings.integration_api_key and integration_key == settings.integration_api_key) and not verify_retell_signature(raw_body, x_retell_signature):
+        raise HTTPException(status_code=401, detail={"message": "Invalid webhook credentials."})
+
+    payload = _as_dict(raw_body)
+    event = payload.get("event")
+    if event and event != "call_analyzed":
+        return {"received": True, "ignored": event}
+
+    result = await run_voice_call_analysis(payload)
+    saved_lead = result.pop("savedLead", None)
+    if result.pop("newLeadCreated", False) and saved_lead:
+        background_tasks.add_task(dispatch_automatic_followup, saved_lead)
+    return result
 
 
 @router.post("/voice-agent/followup-call", status_code=201)
