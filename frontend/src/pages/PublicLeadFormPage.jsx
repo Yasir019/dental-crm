@@ -3,7 +3,6 @@ import {
   AlignCenter,
   ArrowRight,
   ArrowUp,
-  AudioLines,
   Baby,
   CalendarCheck,
   Check,
@@ -13,8 +12,10 @@ import {
   HeartPulse,
   Maximize2,
   MessageCircle,
+  MessagesSquare,
   Minimize2,
   Phone,
+  PhoneCall,
   PhoneOff,
   ScanFace,
   ShieldPlus,
@@ -632,10 +633,16 @@ export default function PublicLeadFormPage({ showToast }) {
         </div>
       </footer>
 
-      <div className="fixed bottom-5 right-5 z-40 flex items-center gap-1 rounded-full border border-[#dce9d7] bg-white p-1.5 shadow-[0_10px_30px_rgba(23,27,24,0.14)]">
+      <div className="assistant-dock fixed bottom-5 right-5 z-40">
+        <div className="assistant-dock__copy">
+          <span className="assistant-dock__eyebrow">Need a hand?</span>
+          <span className="assistant-dock__hint">Our team is here</span>
+        </div>
+        <div className="assistant-dock__actions">
         <LauncherButton
-          icon={AudioLines}
+          icon={PhoneCall}
           label="Talk"
+          tone="voice"
           active={voiceOpen}
           ariaLabel={voiceOpen ? "Close voice assistant" : "Open voice assistant"}
           onClick={() => {
@@ -648,8 +655,9 @@ export default function PublicLeadFormPage({ showToast }) {
           }}
         />
         <LauncherButton
-          icon={MessageCircle}
+          icon={MessagesSquare}
           label="Chat"
+          tone="chat"
           active={chatOpen}
           ariaLabel={chatOpen ? "Close chat" : "Open chat"}
           onClick={() => {
@@ -657,11 +665,12 @@ export default function PublicLeadFormPage({ showToast }) {
             setChatOpen((value) => !value);
           }}
         />
+        </div>
       </div>
 
       {voiceOpen && (
         <FloatingPanel
-          icon={AudioLines}
+          icon={PhoneCall}
           title="Talk to the clinic"
           subtitle={voiceCallActive ? "On a call now" : "Voice call in your browser"}
           live={voiceCallActive}
@@ -711,7 +720,7 @@ export default function PublicLeadFormPage({ showToast }) {
       )}
 
       {chatOpen && (
-        <FloatingPanel icon={MessageCircle} title="Chat with the clinic" subtitle="Usually replies in a few seconds" onClose={() => setChatOpen(false)}>
+        <FloatingPanel icon={MessagesSquare} title="Chat with the clinic" subtitle="Usually replies in a few seconds" onClose={() => setChatOpen(false)}>
           <div className="flex h-full min-h-0 flex-col">
             <div ref={chatScrollRef} className="app-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4">
               {chatMessages.map((message, index) => (
@@ -803,18 +812,16 @@ export default function PublicLeadFormPage({ showToast }) {
   );
 }
 
-function LauncherButton({ icon: Icon, label, active, ariaLabel, onClick }) {
+function LauncherButton({ icon: Icon, label, tone, active, ariaLabel, onClick }) {
   return (
     <button
-      className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
-        active ? "bg-[#1d1f1c] text-white" : "text-[#263229] hover:bg-[#eff8eb]"
-      }`}
+      className={`assistant-dock__button assistant-dock__button--${tone} ${active ? "is-active" : ""}`}
       onClick={onClick}
       aria-label={ariaLabel}
       aria-pressed={active}
     >
-      <Icon size={18} strokeWidth={2.1} />
-      {label}
+      <span className="assistant-dock__icon"><Icon size={17} strokeWidth={2.2} /></span>
+      <span>{label}</span>
     </button>
   );
 }
@@ -845,8 +852,8 @@ function FloatingPanel({ icon: Icon, title, subtitle, live = false, children, on
           : "fixed bottom-24 right-5 z-40 h-[min(600px,calc(100vh-7.5rem))] w-[calc(100vw-2.5rem)] max-w-[380px] rounded-[20px] border shadow-[0_18px_50px_rgba(23,27,24,0.16)]"
       }`}
     >
-      <div className="flex shrink-0 items-center gap-3 border-b border-[#edf1ea] px-4 py-3.5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#dff4d7] text-[#087f5b]">
+      <div className="assistant-panel__header flex shrink-0 items-center gap-3 border-b border-[#edf1ea] px-4 py-3.5">
+        <div className="assistant-panel__icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#dff4d7] text-[#087f5b]">
           <Icon size={19} strokeWidth={2.1} />
         </div>
         <div className="min-w-0 flex-1">
